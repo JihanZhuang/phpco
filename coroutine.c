@@ -51,14 +51,14 @@ PHP_FUNCTION(coroutine_create)
     }
 
     efree(func_cache);
-    efree(swReactorCheckPoint);
+    efree(checkPoint);
 
     if (ret < 0)
     {
         RETURN_FALSE;
     }
 
-    swReactorCheckPoint = prev_checkpoint;
+    checkPoint = prev_checkpoint;
     coro_resume_parent(ctx, retval, retval);
     COROG.require = required;
     efree(ctx);
