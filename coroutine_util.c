@@ -139,6 +139,20 @@ i_inline void coro_close(TSRMLS_D)
     //swTraceLog(SW_TRACE_COROUTINE, "closing coro and %d remained. usage size: %zu. malloc size: %zu", COROG.coro_num, zend_memory_usage(0), zend_memory_usage(1));
 }
 
+i_inline php_context *i_coro_save(zval *return_value, php_context *i_current_context)
+{
+    i_current_context->current_coro_return_value_ptr = return_value;
+    i_current_context->current_execute_data = EG(current_execute_data);
+    i_current_context->current_vm_stack = EG(vm_stack);
+    i_current_context->current_vm_stack_top = EG(vm_stack_top);
+    i_current_context->current_vm_stack_end = EG(vm_stack_end);
+    i_current_context->current_task = COROG.current_coro;
+    i_current_context->allocated_return_value_ptr = COROG.allocated_return_value_ptr;
+
+    return i_current_context;
+
+}
+
 int i_coro_resume(php_context *i_current_context, zval *retval, zval *coro_retval)
 {
     EG(vm_stack) = i_current_context->current_vm_stack;
