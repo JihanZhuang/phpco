@@ -167,7 +167,7 @@ int i_coro_resume(php_context *i_current_context, zval *retval, zval *coro_retva
     EG(current_execute_data)->opline++;
 
     int coro_status;
-    if (!setjmp(*swReactorCheckPoint))
+    if (!setjmp(*checkPoint))
     {
         //coro exit
         zend_execute_ex(EG(current_execute_data) TSRMLS_CC);

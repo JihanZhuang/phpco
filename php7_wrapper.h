@@ -145,7 +145,7 @@ static inline int I_Z_TYPE_P(zval *z)
 #define IS_TRUE    1
 inline int I_Z_TYPE_P(zval *z);
 #define I_Z_TYPE_PP(z)        I_Z_TYPE_P(*z)
-static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_str *formstr TSRMLS_DC)
+/*static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_str *formstr TSRMLS_DC)
 {
 #if PHP_MAJOR_VERSION == 5 && PHP_MINOR_VERSION == 3
     if (php_url_encode_hash_ex(HASH_OF(data), formstr, NULL, 0, NULL, 0, NULL, 0, NULL, NULL TSRMLS_CC) == FAILURE)
@@ -166,7 +166,7 @@ static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_
     smart_str_0(formstr);
     *length = formstr->len;
     return formstr->c;
-}
+}*/
 
 #define i_get_object_handle(object)        Z_OBJ_HANDLE_P(object)
 
@@ -425,7 +425,7 @@ static inline int i_zend_hash_exists(HashTable *ht, char *k, int len)
     }
 }
 
-static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_str *formstr TSRMLS_DC)
+/*static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_str *formstr TSRMLS_DC)
 {
     if (php_url_encode_hash_ex(HASH_OF(data), formstr, NULL, 0, NULL, 0, NULL, 0, NULL, NULL, (int) PHP_QUERY_RFC1738) == FAILURE)
     {
@@ -442,7 +442,7 @@ static i_inline char* i_http_build_query(zval *data, zend_size_t *length, smart_
     smart_str_0(formstr);
     *length = formstr->s->len;
     return formstr->s->val;
-}
+}*/
 
 #define i_get_object_handle(object)    Z_OBJ_HANDLE(*object)
 
