@@ -14,9 +14,9 @@ PHP_FUNCTION(coroutine_create)
 
     char *func_name = NULL;
     zend_fcall_info_cache *func_cache = emalloc(sizeof(zend_fcall_info_cache));
-    if (!zend_is_callable_ex(callback, NULL, 0, &func_name, NULL, func_cache, NULL TSRMLS_CC))
+    if (!i_zend_is_callable_ex(callback, NULL, 0, &func_name, NULL, func_cache, NULL TSRMLS_CC))
     {
-        php_fatal_error(E_ERROR, "Function '%s' is not callable", func_name);
+        i_php_fatal_error(E_ERROR, "Function '%s' is not callable", func_name);
         efree(func_name);
         return;
     }
@@ -24,17 +24,17 @@ PHP_FUNCTION(coroutine_create)
 
     if (checkPoint == NULL)
     {
-        coro_init();
+        coro_init(TSRMLS_C);
     }
 
-    callback = zval_dup(callback);
-    zval_add_ref(&callback);
+    callback = i_zval_dup(callback);
+    i_zval_add_ref(&callback);
 
     zval *retval = NULL;
     zval *args[1];
 
-    jmp_buf *prev_checkpoint = swReactorCheckPoint;
-    swReactorCheckPoint = emalloc(sizeof(jmp_buf));
+    jmp_buf *prev_checkpoint = checkPoint;
+    checkPoint = emalloc(sizeof(jmp_buf));
 
     php_context *ctx = emalloc(sizeof(php_context));
     coro_save(ctx);
@@ -47,7 +47,7 @@ PHP_FUNCTION(coroutine_create)
     }
     else
     {
-        zval_free(callback);
+        i_zval_free(callback);
     }
 
     efree(func_cache);
@@ -68,7 +68,7 @@ PHP_FUNCTION(coroutine_create)
     }
     if (retval != NULL)
     {
-        zval_ptr_dtor(&retval);
+        i_zval_ptr_dtor(&retval);
     }
     RETURN_TRUE;
 }

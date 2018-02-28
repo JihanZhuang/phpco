@@ -29,7 +29,7 @@ static inline void i_vm_stack_init(void)
 #define i_vm_stack_init zend_vm_stack_init
 #endif
 
-int coro_init(void)
+int coro_init(TSRMLS_D)
 {
 #if PHP_MAJOR_VERSION < 7
     COROG.origin_vm_stack = EG(argument_stack);
@@ -271,6 +271,80 @@ int sw_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval
     }
     COROG.require = 0;
     return coro_status;
+}
+#endif
+
+#if PHP_MAJOR_VERSION < 7
+i_inline void coro_close(TSRMLS_D)
+{
+    if (COROG.current_coro->post_callback)
+    {
+        COROG.current_coro->post_callback(COROG.current_coro->post_callback_params);
+    }
+    free_cidmap(COROG.current_coro->cid);
+    if (COROG.current_coro->function)
+    {
+        i_zval_free(COROG.current_coro->function);
+    }
+
+    void **arguments = EG(current_execute_data)->function_state.arguments;
+
+    if (arguments)
+    {
+        int arg_count = (int)(zend_uintptr_t)(*arguments);
+        zval **arg_start = (zval **)(arguments - arg_count);
+        int i;
+        for (i = 0; i < arg_count; ++i)
+        {
+            zval_ptr_dtor(arg_start + i);
+        }
+    }
+
+    if (EG(active_symbol_table))
+    {
+        if (EG(symtable_cache_ptr) >= EG(symtable_cache_limit))
+        {
+            zend_hash_destroy(EG(active_symbol_table));
+            efree(EG(active_symbol_table));
+        }
+        else
+        {
+            zend_hash_clean(EG(active_symbol_table));
+            *(++EG(symtable_cache_ptr)) = EG(active_symbol_table);
+        }
+        EG(active_symbol_table) = NULL;
+    }
+
+    if (EG(return_value_ptr_ptr))
+    {
+        efree(EG(return_value_ptr_ptr));
+    }
+    efree(EG(argument_stack));
+    EG(argument_stack) = COROG.origin_vm_stack;
+    EG(current_execute_data) = COROG.origin_ex;
+    --COROG.coro_num;
+    //swTrace("closing coro and %d remained. usage size: %zu. malloc size: %zu", COROG.coro_num, zend_memory_usage(0 TSRMLS_CC), zend_memory_usage(1 TSRMLS_CC));
+    
+    return;
+}
+#else
+i_inline void coro_close(TSRMLS_D)
+{
+    //swTraceLog(SW_TRACE_COROUTINE, "Close coroutine id %d", COROG.current_coro->cid);
+    if (COROG.current_coro->function)
+    {
+        i_zval_free(COROG.current_coro->function);
+        COROG.current_coro->function = NULL;
+    }
+    free_cidmap(COROG.current_coro->cid);
+    efree(EG(vm_stack));
+    efree(COROG.allocated_return_value_ptr);
+    EG(vm_stack) = COROG.origin_vm_stack;
+    EG(vm_stack_top) = COROG.origin_vm_stack_top;
+    EG(vm_stack_end) = COROG.origin_vm_stack_end;
+    --COROG.coro_num;
+    COROG.current_coro = NULL;
+    //swTraceLog(SW_TRACE_COROUTINE, "closing coro and %d remained. usage size: %zu. malloc size: %zu", COROG.coro_num, zend_memory_usage(0), zend_memory_usage(1));
 }
 #endif
 
