@@ -73,6 +73,8 @@ extern jmp_buf *checkPoint;
 int i_coro_resume_parent(php_context *current_context, zval *retval, zval *coro_retval);
 
 int coro_init(TSRMLS_D);
+void coro_yield();
+
 #if PHP_MAJOR_VERSION >= 7
 #define coro_create(op_array, argv, argc, retval, post_callback, param) \
         i_coro_create(op_array, argv, argc, *retval, post_callback, param)
