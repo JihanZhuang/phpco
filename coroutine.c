@@ -4,6 +4,10 @@ static zend_class_entry *coroutine_util_class_entry_ptr;
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
+    ZEND_ARG_INFO(0, callback)
+ZEND_END_ARG_INFO()
+
 PHP_FUNCTION(coroutine_create)
 {
     zval *callback;
@@ -74,6 +78,8 @@ PHP_FUNCTION(coroutine_create)
 }
 const zend_function_entry coroutine_function[]={
 	PHP_FE(coroutine_create, arginfo_coroutine_create)
+    PHP_FALIAS(create, coroutine_create, arginfo_coroutine_create)
+    PHP_FALIAS(co, coroutine_create, arginfo_coroutine_create)
 	PHP_FE_END
 };
 const zend_function_entry coroutine_method[]={
