@@ -1,11 +1,11 @@
 #include "php_coroutine.h"
 static zend_class_entry coroutine_util_ce;
 static zend_class_entry *coroutine_util_class_entry_ptr;
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
-    ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
 
 PHP_FUNCTION(coroutine_create)
@@ -76,9 +76,70 @@ PHP_FUNCTION(coroutine_create)
     }
     RETURN_TRUE;
 }
+
+PHP_METHOD(coroutine,read)
+{
+    zval *handle;
+    zend_long length = 0;
+
+#ifdef FAST_ZPP
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_RESOURCE(handle)
+        Z_PARAM_OPTIONAL
+        Z_PARAM_LONG(length)
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
+#else
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r|l", &handle, &length) == FAILURE)
+    {
+        return;
+    }
+#endif
+
+    int fd = i_convert_to_fd(handle TSRMLS_CC);
+    struct stat file_stat;
+    if (fstat(fd, &file_stat) < 0)
+    {
+        RETURN_FALSE;
+    }
+    
+    off_t _seek = lseek(fd, 0, SEEK_CUR);
+    if (length <= 0 || file_stat.st_size - _seek < length)
+    {
+        length = file_stat.st_size - _seek;
+    }
+    
+    aio_event *ev = (aio_event *) emalloc(sizeof(aio_event));
+    bzero(ev, sizeof(aio_event));
+
+    ev->nbytes = length + 1;
+    ev->buf = emalloc(ev->nbytes);
+    if (!ev->buf)
+    {
+        RETURN_FALSE;
+    }
+
+    php_context *context = emalloc(sizeof(php_context));
+
+    ((char *) ev->buf)[length] = 0;
+    ev->php_context = context;
+    ev->callback = aio_onReadCompleted;
+    ev->fd = fd;
+    ev->offset = _seek;
+
+    int ret = aio_event_store(ev);
+    if (ret < 0)
+    {
+        efree(context);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();
+}
+
 const zend_function_entry coroutine_function[]={
 	PHP_FE(coroutine_create, arginfo_coroutine_create)
-    PHP_FALIAS(create, coroutine_create, arginfo_coroutine_create)
+//    PHP_FALIAS(create, coroutine_create, arginfo_coroutine_create)
     PHP_FALIAS(co, coroutine_create, arginfo_coroutine_create)
 	PHP_FE_END
 };

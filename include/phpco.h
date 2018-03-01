@@ -20,6 +20,16 @@
 #define i_inline inline
 #endif
 
+#if PHP_VERSION_ID >= 50301 && (HAVE_SOCKETS || defined(COMPILE_DL_SOCKETS))
+#include "ext/sockets/php_sockets.h"
+#define I_SOCKETS_SUPPORT
+#else
+#error "Enable sockets support, require sockets extension."
+#endif
+
+#define I_OK                  0
+#define I_ERR                -1
+
 
 #define i_php_fatal_error(level, fmt_str, ...)   php_error_docref(NULL TSRMLS_CC, level, fmt_str, ##__VA_ARGS__)
 
