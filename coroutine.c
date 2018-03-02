@@ -149,7 +149,7 @@ PHP_METHOD(coroutine,read)
     ev->fd = fd;
     ev->offset = _seek;
     
-    stEvent->data.ptr=ev;    
+    stEvent->data.fd=fd;    
     stEvent->events=EPOLLIN;
 
     int ret = aio_event_store(stEvent);
@@ -170,15 +170,18 @@ PHP_METHOD(coroutine,event_loop)
     struct epoll_event event;
     struct epoll_event *events;
     int nfds,i;
-    events = calloc (DEFAULT_MAX_EVENT, sizeof event);
+    events = calloc (DEFAULT_MAX_EVENT, sizeof(event));
+
 
     for(;;)
     {
         nfds = epoll_wait (RG.epollfd, events,DEFAULT_MAX_EVENT,1000);
         for(i=0;i<nfds;i++)
         {
-            aio_event *ev=events[i].data.ptr; 
-            ev->callback(ev);
+            if(events[i].events&EPOLLIN){
+                aio_event *ev=(aio_event *)events[i].data.ptr; 
+                ev->callback(ev);
+            }
         }
     }    
 }

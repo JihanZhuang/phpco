@@ -2,7 +2,8 @@
 int aio_event_store(struct epoll_event *ev)
 {
     
-    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,((aio_event *)ev->data.ptr)->fd,&ev)==-1){
+    //if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,((aio_event *)ev->data.ptr)->fd,&ev)==-1){
+    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->data.fd,&ev)==-1){
         return I_ERR;
     }
     RG.nfds++;
