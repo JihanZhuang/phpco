@@ -2,6 +2,25 @@
 static zend_class_entry coroutine_util_ce;
 static zend_class_entry *coroutine_util_class_entry_ptr;
 
+static void aio_onReadCompleted(aio_event *event)
+{
+    zval *retval = NULL;
+    zval *result = NULL;
+    I_MAKE_STD_ZVAL(result);
+    
+    ZVAL_BOOL(result, 1);
+
+    php_context *context = (php_context *) event->php_context;
+    int ret = coro_resume(context, result, &retval);
+    if (ret == CORO_END && retval)
+    {
+        i_zval_ptr_dtor(&retval);
+    }
+    i_zval_ptr_dtor(&result);
+    efree(event->buf);
+    efree(context);
+}
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
@@ -126,11 +145,12 @@ PHP_METHOD(coroutine,read)
     //补充字符'\0'
     ((char *) ev->buf)[length] = 0;
     ev->php_context = context;
-    //ev->callback = aio_onReadCompleted;
+    ev->callback = aio_onReadCompleted;
     ev->fd = fd;
     ev->offset = _seek;
     
     stEvent->data.ptr=ev;    
+    stEvent->events=EPOLLIN;
 
     int ret = aio_event_store(stEvent);
     if (ret < 0)
@@ -147,7 +167,20 @@ PHP_METHOD(coroutine,read)
 
 PHP_METHOD(coroutine,event_loop)
 {
-    
+    struct epoll_event event;
+    struct epoll_event *events;
+    int nfds,i;
+    events = calloc (DEFAULT_MAX_EVENT, sizeof event);
+
+    for(;;)
+    {
+        nfds = epoll_wait (RG.epollfd, events,DEFAULT_MAX_EVENT,1000);
+        for(i=0;i<nfds;i++)
+        {
+            aio_event *ev=events[i].data.ptr; 
+            ev->callback(ev);
+        }
+    }    
 }
 
 const zend_function_entry coroutine_function[]={
