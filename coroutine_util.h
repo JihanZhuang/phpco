@@ -1,6 +1,8 @@
 #ifndef _PHP_COROUTINE_UTIL_H_
 #define _PHP_COROUTINE_UTIL_H_
 
+#include "src/hashtable/hashtable.h"
+
 #define DEFAULT_MAX_CORO_NUM 3000
 #define DEFAULT_STACK_SIZE   8192
 
@@ -62,6 +64,16 @@ struct _coro_task
     void (*post_callback)(void *param);
     void *post_callback_params;
 };
+
+
+typedef struct _react_global
+{
+    int init;
+    int epollfd;
+    HashTable* ht;
+    *socket_fd_list socket_array[102400];
+    int nfds;//record fd nums
+} 
 
 typedef struct _coro_global
 {
