@@ -8,8 +8,8 @@ dnl Check whether the extension is enabled at all
 if test "$PHP_COROUTINE" != "no"; then
   dnl Finally, tell the build system about the extension and what files are needed
   PHP_NEW_EXTENSION(coroutine,\
-    src/hashtable/hashtable.c \
     coroutine_util.c \
+    coroutine_event.c \
     coroutine.c, $ext_shared)
   PHP_SUBST(COROUTINE_SHARED_LIBADD)
 fi

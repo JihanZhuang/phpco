@@ -1,8 +1,12 @@
-#include "coroutine.h"
-#include "include/phpco.h"
-int aio_event_store(aio_event *event)
+#include "coroutine_event.h"
+int aio_event_store(struct epoll_event *ev)
 {
     
+    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,((aio_event *)ev->data.ptr)->fd,&ev)==-1){
+        return I_ERR;
+    }
+    RG.nfds++;
+    return I_OK;
 }
 int i_convert_to_fd(zval *zfd TSRMLS_DC)
 {

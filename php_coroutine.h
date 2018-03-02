@@ -7,6 +7,11 @@
 #endif
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
+#include <sys/socket.h> 
+#include <sys/wait.h> 
+#include <netinet/in.h> 
+#include <netinet/tcp.h> 
+#include <sys/epoll.h> 
 #include "phpco.h"
 #include "php7_wrapper.h"
 #include "coroutine_util.h"

@@ -1,5 +1,7 @@
 #ifndef _PHP_COROUTINE_EVENT_H_
 #define _PHP_COROUTINE_EVENT_H_
+#include "coroutine_util.h"
+#include "include/phpco.h"
 typedef struct _aio_event
 {
     int fd;
@@ -11,5 +13,5 @@ typedef struct _aio_event
     void (*callback)(struct _aio_event *event);
 } aio_event;
 int i_convert_to_fd(zval *zfd TSRMLS_DC);
-int aio_event_store(aio_event *event);
+int aio_event_store(struct epoll_event *event);
 #endif

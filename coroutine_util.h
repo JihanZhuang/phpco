@@ -1,10 +1,12 @@
 #ifndef _PHP_COROUTINE_UTIL_H_
 #define _PHP_COROUTINE_UTIL_H_
-
-#include "src/hashtable/hashtable.h"
+#include "php_coroutine.h"
+#include "zend_API.h"
+#include "ext/standard/php_lcg.h"
 
 #define DEFAULT_MAX_CORO_NUM 3000
 #define DEFAULT_STACK_SIZE   8192
+#define DEFAULT_MAX_EVENT   512
 
 #define CORO_END 0
 #define CORO_YIELD 1
@@ -16,6 +18,7 @@
 
 typedef struct _php_context php_context;
 typedef struct _coro_task coro_task;
+typedef struct _react_global react_global;
 
 typedef enum
 {
@@ -70,10 +73,8 @@ typedef struct _react_global
 {
     int init;
     int epollfd;
-    HashTable* ht;
-    *socket_fd_list socket_array[102400];
     int nfds;//record fd nums
-} 
+}; 
 
 typedef struct _coro_global
 {
@@ -91,6 +92,7 @@ typedef struct _coro_global
     zend_bool require;
 } coro_global;
 extern coro_global COROG;
+extern react_global RG;
 #define get_current_cid() COROG.current_coro->cid
 extern jmp_buf *checkPoint;
 

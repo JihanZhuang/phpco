@@ -108,7 +108,9 @@ PHP_METHOD(coroutine,read)
         length = file_stat.st_size - _seek;
     }
     
-    aio_event *ev = (aio_event *) emalloc(sizeof(aio_event));
+    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+    memset(stEvent,0,sizeof(struct epoll_event));
+    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
     bzero(ev, sizeof(aio_event));
 
     ev->nbytes = length + 1;
@@ -122,11 +124,13 @@ PHP_METHOD(coroutine,read)
 
     ((char *) ev->buf)[length] = 0;
     ev->php_context = context;
-    ev->callback = aio_onReadCompleted;
+    //ev->callback = aio_onReadCompleted;
     ev->fd = fd;
     ev->offset = _seek;
+    
+    stEvent->data.ptr=ev;    
 
-    int ret = aio_event_store(ev);
+    int ret = aio_event_store(stEvent);
     if (ret < 0)
     {
         efree(context);
@@ -145,6 +149,7 @@ const zend_function_entry coroutine_function[]={
 };
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     //PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END
 };

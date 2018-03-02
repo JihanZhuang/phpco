@@ -6,6 +6,7 @@
 
 jmp_buf *checkPoint = NULL;
 coro_global COROG;
+react_global RG;
 
 static int alloc_cidmap();
 static void free_cidmap(int cid);
@@ -49,6 +50,10 @@ int coro_init(TSRMLS_D)
         COROG.stack_size = DEFAULT_STACK_SIZE;
     }
     COROG.require = 0;
+    //init RG
+    RG.init=1;
+    RG.epollfd = epoll_create(DEFAULT_MAX_EVENT);
+    RG.nfds = 0;
     checkPoint = emalloc(sizeof(jmp_buf));
     return 0;
 }
