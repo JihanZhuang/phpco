@@ -7,6 +7,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
+ZEND_END_ARG_INFO()
 
 PHP_FUNCTION(coroutine_create)
 {
@@ -121,7 +123,7 @@ PHP_METHOD(coroutine,read)
     }
 
     php_context *context = emalloc(sizeof(php_context));
-
+    //补充字符'\0'
     ((char *) ev->buf)[length] = 0;
     ev->php_context = context;
     //ev->callback = aio_onReadCompleted;
@@ -134,11 +136,18 @@ PHP_METHOD(coroutine,read)
     if (ret < 0)
     {
         efree(context);
+        free(stEvent);
+        free(ev);
         RETURN_FALSE;
     }
 
     coro_save(context);
     coro_yield();
+}
+
+PHP_METHOD(coroutine,event_loop)
+{
+    
 }
 
 const zend_function_entry coroutine_function[]={
@@ -150,6 +159,7 @@ const zend_function_entry coroutine_function[]={
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     //PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END
 };
