@@ -149,7 +149,7 @@ PHP_METHOD(coroutine,read)
     ev->fd = fd;
     ev->offset = _seek;
     
-    stEvent->data.fd=fd;    
+    stEvent->data.ptr=ev;    
     stEvent->events=EPOLLIN;
 
     int ret = aio_event_store(stEvent);
