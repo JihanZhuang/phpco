@@ -1,7 +1,6 @@
 #include "coroutine_event.h"
 int aio_event_store(struct epoll_event *ev)
 {
-    //这里如果写成&ev，不报错... 
     if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,((aio_event *)ev->data.ptr)->fd,ev)==-1){
     //if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->data.fd,ev)==-1){
         return I_ERR;
