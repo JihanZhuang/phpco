@@ -153,7 +153,7 @@ PHP_METHOD(coroutine,read)
     stEvent->events=EPOLLIN;
     ev->ep_event=stEvent;
 
-    int ret = aio_event_store(stEvent);
+    int ret = aio_event_store(ev);
     free(stEvent);
     if (ret < 0)
     {
@@ -191,7 +191,6 @@ PHP_METHOD(coroutine,event_loop)
 
 const zend_function_entry coroutine_function[]={
 	PHP_FE(coroutine_create, arginfo_coroutine_create)
-//    PHP_FALIAS(create, coroutine_create, arginfo_coroutine_create)
     PHP_FALIAS(co, coroutine_create, arginfo_coroutine_create)
 	PHP_FE_END
 };

@@ -17,7 +17,8 @@ if (socket_listen($sock, 5) === false) {
 }
 socket_set_nonblock($sock);
 var_dump($sock);
-co::read($sock,1025);
+$data=co::read($sock,1025);
+var_dump($data);
 echo 123;
 });
 co::event_loop();

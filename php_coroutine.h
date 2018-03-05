@@ -27,4 +27,5 @@ PHP_MSHUTDOWN_FUNCTION(coroutine);
 PHP_RINIT_FUNCTION(coroutine);
 PHP_RSHUTDOWN_FUNCTION(coroutine);
 PHP_MINFO_FUNCTION(coroutine);
+static void aio_onReadCompleted(aio_event *event);
 #endif	/* PHP_PHPCO_H */
