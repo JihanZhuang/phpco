@@ -151,8 +151,10 @@ PHP_METHOD(coroutine,read)
     
     stEvent->data.ptr=ev;    
     stEvent->events=EPOLLIN;
+    ev->ep_event=stEvent;
 
     int ret = aio_event_store(stEvent);
+    free(stEvent);
     if (ret < 0)
     {
         efree(context);
@@ -181,6 +183,7 @@ PHP_METHOD(coroutine,event_loop)
             if(events[i].events&EPOLLIN){
                 aio_event *ev=(aio_event *)events[i].data.ptr; 
                 ev->callback(ev);
+                aio_event_free(ev);
             }
         }
     }    

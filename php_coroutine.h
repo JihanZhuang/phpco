@@ -12,6 +12,8 @@
 #include <netinet/in.h> 
 #include <netinet/tcp.h> 
 #include <sys/epoll.h> 
+#include <fcntl.h>
+#include <unistd.h>
 #include "phpco.h"
 #include "php7_wrapper.h"
 #include "coroutine_util.h"

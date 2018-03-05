@@ -10,8 +10,10 @@ typedef struct _aio_event
     void *buf;
     void *req;
     void *php_context;
+    struct epoll_event *ep_event;
     void (*callback)(struct _aio_event *event);
 } aio_event;
 int i_convert_to_fd(zval *zfd TSRMLS_DC);
-int aio_event_store(struct epoll_event *event);
+int aio_event_store(aio_event *event);
+int aio_event_free(aio_event *event);
 #endif

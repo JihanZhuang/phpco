@@ -1,13 +1,45 @@
 #include "coroutine_event.h"
-int aio_event_store(struct epoll_event *ev)
+int aio_event_store(aio_event *ev)
 {
-    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,((aio_event *)ev->data.ptr)->fd,ev)==-1){
-    //if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->data.fd,ev)==-1){
+    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->fd,ev->ep_event)==-1){
         return I_ERR;
     }
     RG.nfds++;
     return I_OK;
 }
+int aio_event_free(aio_event *ev)
+{
+    if (ev == NULL) {
+        return I_OK;
+    }
+ 
+    if (ev->fd != 0) {
+        close(ev->fd);
+        ev->fd = 0;
+    }
+ 
+    if (ev->ep_event != NULL) {
+        free(ev->ep_event);
+    }
+ 
+    free(ev);
+}
+
+int socket_setnonblock(int fd)
+{
+    long flags = fcntl(fd, F_GETFL);
+    if (flags < 0) {
+        return I_ERR;
+    }
+ 
+    flags |= O_NONBLOCK;
+    if (fcntl(fd, F_SETFL, flags) < 0) {
+        return I_ERR;
+    }
+ 
+    return I_OK;
+}
+
 int i_convert_to_fd(zval *zfd TSRMLS_DC)
 {
     php_stream *stream;
