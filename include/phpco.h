@@ -29,6 +29,7 @@
 
 #define I_OK                  0
 #define I_ERR                -1
+#define IS_CO                100
 
 
 #define i_php_fatal_error(level, fmt_str, ...)   php_error_docref(NULL TSRMLS_CC, level, fmt_str, ##__VA_ARGS__)
