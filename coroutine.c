@@ -21,10 +21,35 @@ static void aio_onReadCompleted(aio_event *event)
     efree(context);
 }
 
+static void aio_test(aio_event *event)
+{
+    zval *retval = NULL;
+    zval *result = NULL;
+    zval function_name;
+
+    I_MAKE_STD_ZVAL(result);   
+
+    ZVAL_STRING(&function_name,event->function_name);
+    call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
+ 
+    php_context *context = (php_context *) event->php_context;
+    int ret = coro_resume(context, result, &retval);
+    if (ret == CORO_END && retval)
+    {
+        i_zval_ptr_dtor(&retval);
+    }
+    i_zval_ptr_dtor(&result);
+    efree(context);
+    efree(event->arguments);
+
+}
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_test, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -154,7 +179,6 @@ PHP_METHOD(coroutine,read)
     ev->ep_event=stEvent;
 
     int ret = aio_event_store(ev);
-    free(stEvent);
     if (ret < 0)
     {
         efree(context);
@@ -165,6 +189,51 @@ PHP_METHOD(coroutine,read)
 
     coro_save(context);
     coro_yield();
+}
+
+PHP_METHOD(coroutine,test)
+{
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+    
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0);
+
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }
+
+    int fd = i_convert_to_fd(arguments TSRMLS_CC);
+        
+    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+    memset(stEvent,0,sizeof(struct epoll_event));
+    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
+    bzero(ev, sizeof(aio_event));
+
+    php_context *context = emalloc(sizeof(php_context));
+    //补充字符'\0'
+    ev->php_context = context;
+    ev->callback = aio_test;
+    ev->fd = fd;
+    ev->function_name="socket_accept";
+    ev->arguments=arguments;
+    ev->args_count=args_count;
+
+    stEvent->data.ptr=ev;
+    stEvent->events=EPOLLIN;
+    ev->ep_event=stEvent;
+
+    int ret = aio_event_store(ev);
+    if (ret < 0)
+    {
+        efree(context);
+        free(stEvent);
+        free(ev);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();        
 }
 
 PHP_METHOD(coroutine,event_loop)
@@ -184,9 +253,11 @@ PHP_METHOD(coroutine,event_loop)
                 aio_event *ev=(aio_event *)events[i].data.ptr; 
                 ev->callback(ev);
                 aio_event_free(ev);
+                goto end;
             }
         }
     }    
+    end:;
 }
 
 const zend_function_entry coroutine_function[]={
@@ -197,6 +268,7 @@ const zend_function_entry coroutine_function[]={
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      test, arginfo_coroutine_test,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     //PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END

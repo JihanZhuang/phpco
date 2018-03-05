@@ -11,6 +11,9 @@ typedef struct _aio_event
     void *req;
     void *php_context;
     struct epoll_event *ep_event;
+    zval *arguments;
+    int args_count;
+    char *function_name;
     void (*callback)(struct _aio_event *event);
 } aio_event;
 int i_convert_to_fd(zval *zfd TSRMLS_DC);
