@@ -12,7 +12,7 @@ static int alloc_cidmap();
 static void free_cidmap(int cid);
 
 #if PHP_MAJOR_VERSION >= 7 && PHP_MINOR_VERSION >= 2
-static inline void i_vm_stack_init(void)
+static inline void c_vm_stack_init(void)
 {
     uint32_t size = COROG.stack_size;
     zend_vm_stack page = (zend_vm_stack) emalloc(size);
@@ -27,7 +27,7 @@ static inline void i_vm_stack_init(void)
     EG(vm_stack_end) = EG(vm_stack)->end;
 }
 #else
-#define i_vm_stack_init zend_vm_stack_init
+#define c_vm_stack_init zend_vm_stack_init
 #endif
 
 int coro_init(TSRMLS_D)
@@ -61,7 +61,7 @@ int coro_init(TSRMLS_D)
 #define TASK_SLOT \
     ((int)((ZEND_MM_ALIGNED_SIZE(sizeof(coro_task)) + ZEND_MM_ALIGNED_SIZE(sizeof(zval)) - 1) / ZEND_MM_ALIGNED_SIZE(sizeof(zval))))
 
-int i_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval *retval, void *post_callback, void* params)
+int c_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval *retval, void *post_callback, void* params)
 {
     int cid = alloc_cidmap();
     if (unlikely(COROG.coro_num >= COROG.max_coro_num) && unlikely(cid != -1))
@@ -73,7 +73,7 @@ int i_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval 
     zend_op_array *op_array = (zend_op_array *) fci_cache->function_handler;
     zend_object *object;
     int i;
-    i_vm_stack_init();
+    c_vm_stack_init();
 //类似zend_call_function
     //swTraceLog(SW_TRACE_COROUTINE, "Create coroutine id %d.", cid);
 
@@ -95,7 +95,7 @@ int i_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval 
     }
 
     call->symbol_table = NULL;
-    I_ALLOC_INIT_ZVAL(retval);
+    C_ALLOC_INIT_ZVAL(retval);
     COROG.allocated_return_value_ptr = retval;
     EG(current_execute_data) = NULL;
     zend_init_execute_data(call, op_array, retval);
@@ -125,12 +125,12 @@ int i_coro_create(zend_fcall_info_cache *fci_cache, zval **argv, int argc, zval 
     return coro_status;
 }
 
-i_inline void coro_close(TSRMLS_D)
+c_inline void coro_close(TSRMLS_D)
 {
     //swTraceLog(SW_TRACE_COROUTINE, "Close coroutine id %d", COROG.current_coro->cid);
     if (COROG.current_coro->function)
     {
-        i_zval_free(COROG.current_coro->function);
+        c_zval_free(COROG.current_coro->function);
         COROG.current_coro->function = NULL;
     }
     free_cidmap(COROG.current_coro->cid);
@@ -144,27 +144,27 @@ i_inline void coro_close(TSRMLS_D)
     //swTraceLog(SW_TRACE_COROUTINE, "closing coro and %d remained. usage size: %zu. malloc size: %zu", COROG.coro_num, zend_memory_usage(0), zend_memory_usage(1));
 }
 
-i_inline php_context *i_coro_save(zval *return_value, php_context *i_current_context)
+c_inline php_context *c_coro_save(zval *return_value, php_context *c_current_context)
 {
-    i_current_context->current_coro_return_value_ptr = return_value;
-    i_current_context->current_execute_data = EG(current_execute_data);
-    i_current_context->current_vm_stack = EG(vm_stack);
-    i_current_context->current_vm_stack_top = EG(vm_stack_top);
-    i_current_context->current_vm_stack_end = EG(vm_stack_end);
-    i_current_context->current_task = COROG.current_coro;
-    i_current_context->allocated_return_value_ptr = COROG.allocated_return_value_ptr;
+    c_current_context->current_coro_return_value_ptr = return_value;
+    c_current_context->current_execute_data = EG(current_execute_data);
+    c_current_context->current_vm_stack = EG(vm_stack);
+    c_current_context->current_vm_stack_top = EG(vm_stack_top);
+    c_current_context->current_vm_stack_end = EG(vm_stack_end);
+    c_current_context->current_task = COROG.current_coro;
+    c_current_context->allocated_return_value_ptr = COROG.allocated_return_value_ptr;
 
-    return i_current_context;
+    return c_current_context;
 
 }
 
-int i_coro_resume(php_context *i_current_context, zval *retval, zval *coro_retval)
+int c_coro_resume(php_context *c_current_context, zval *retval, zval *coro_retval)
 {
-    EG(vm_stack) = i_current_context->current_vm_stack;
-    EG(vm_stack_top) = i_current_context->current_vm_stack_top;
-    EG(vm_stack_end) = i_current_context->current_vm_stack_end;
+    EG(vm_stack) = c_current_context->current_vm_stack;
+    EG(vm_stack_top) = c_current_context->current_vm_stack_top;
+    EG(vm_stack_end) = c_current_context->current_vm_stack_end;
 
-    zend_execute_data *current = i_current_context->current_execute_data;
+    zend_execute_data *current = c_current_context->current_execute_data;
     if (ZEND_CALL_INFO(current) & ZEND_CALL_RELEASE_THIS)
     {
         zval_ptr_dtor(&(current->This));
@@ -173,15 +173,15 @@ int i_coro_resume(php_context *i_current_context, zval *retval, zval *coro_retva
     zend_vm_stack_free_call_frame(current);
 
     EG(current_execute_data) = current->prev_execute_data;
-    COROG.current_coro = i_current_context->current_task;
+    COROG.current_coro = c_current_context->current_task;
     COROG.require = 1;
 #if PHP_MINOR_VERSION < 1
     EG(scope) = EG(current_execute_data)->func->op_array.scope;
 #endif
-    COROG.allocated_return_value_ptr = i_current_context->allocated_return_value_ptr;
+    COROG.allocated_return_value_ptr = c_current_context->allocated_return_value_ptr;
     if (EG(current_execute_data)->opline->result_type != IS_UNUSED)
     {
-        ZVAL_COPY(i_current_context->current_coro_return_value_ptr, retval);
+        ZVAL_COPY(c_current_context->current_coro_return_value_ptr, retval);
     }
     EG(current_execute_data)->opline++;
 
@@ -202,25 +202,25 @@ int i_coro_resume(php_context *i_current_context, zval *retval, zval *coro_retva
 
     if (unlikely(coro_status == CORO_END && EG(exception)))
     {
-        i_zval_ptr_dtor(&retval);
+        c_zval_ptr_dtor(&retval);
         zend_exception_error(EG(exception), E_ERROR TSRMLS_CC);
     }
     return coro_status;
 }
 
-int i_coro_resume_parent(php_context *i_current_context, zval *retval, zval *coro_retval)
+int c_coro_resume_parent(php_context *c_current_context, zval *retval, zval *coro_retval)
 {
-    EG(vm_stack) = i_current_context->current_vm_stack;
-    EG(vm_stack_top) = i_current_context->current_vm_stack_top;
-    EG(vm_stack_end) = i_current_context->current_vm_stack_end;
+    EG(vm_stack) = c_current_context->current_vm_stack;
+    EG(vm_stack_top) = c_current_context->current_vm_stack_top;
+    EG(vm_stack_end) = c_current_context->current_vm_stack_end;
 
-    EG(current_execute_data) = i_current_context->current_execute_data;
-    COROG.current_coro = i_current_context->current_task;
-    COROG.allocated_return_value_ptr = i_current_context->allocated_return_value_ptr;
+    EG(current_execute_data) = c_current_context->current_execute_data;
+    COROG.current_coro = c_current_context->current_task;
+    COROG.allocated_return_value_ptr = c_current_context->allocated_return_value_ptr;
     return CORO_END;
 }
 
-i_inline void coro_yield()
+c_inline void coro_yield()
 {
 #if PHP_MAJOR_VERSION >= 7
     EG(vm_stack) = COROG.origin_vm_stack;

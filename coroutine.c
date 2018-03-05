@@ -6,7 +6,7 @@ static void aio_onReadCompleted(aio_event *event)
 {
     zval *retval = NULL;
     zval *result = NULL;
-    I_MAKE_STD_ZVAL(result);
+    C_MAKE_STD_ZVAL(result);
     
     ZVAL_BOOL(result, 1);
 
@@ -14,9 +14,9 @@ static void aio_onReadCompleted(aio_event *event)
     int ret = coro_resume(context, result, &retval);
     if (ret == CORO_END && retval)
     {
-        i_zval_ptr_dtor(&retval);
+        c_zval_ptr_dtor(&retval);
     }
-    i_zval_ptr_dtor(&result);
+    c_zval_ptr_dtor(&result);
     efree(event->buf);
     efree(context);
 }
@@ -27,7 +27,7 @@ static void aio_test(aio_event *event)
     zval *result = NULL;
     zval function_name;
 
-    I_MAKE_STD_ZVAL(result);   
+    C_MAKE_STD_ZVAL(result);   
 
     ZVAL_STRING(&function_name,event->function_name);
     call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
@@ -36,9 +36,9 @@ static void aio_test(aio_event *event)
     int ret = coro_resume(context, result, &retval);
     if (ret == CORO_END && retval)
     {
-        i_zval_ptr_dtor(&retval);
+        c_zval_ptr_dtor(&retval);
     }
-    i_zval_ptr_dtor(&result);
+    c_zval_ptr_dtor(&result);
     efree(context);
     efree(event->arguments);
 
@@ -66,9 +66,9 @@ PHP_FUNCTION(coroutine_create)
 
     char *func_name = NULL;
     zend_fcall_info_cache *func_cache = emalloc(sizeof(zend_fcall_info_cache));
-    if (!i_zend_is_callable_ex(callback, NULL, 0, &func_name, NULL, func_cache, NULL TSRMLS_CC))
+    if (!c_zend_is_callable_ex(callback, NULL, 0, &func_name, NULL, func_cache, NULL TSRMLS_CC))
     {
-        i_php_fatal_error(E_ERROR, "Function '%s' is not callable", func_name);
+        c_php_fatal_error(E_ERROR, "Function '%s' is not callable", func_name);
         efree(func_name);
         return;
     }
@@ -79,8 +79,8 @@ PHP_FUNCTION(coroutine_create)
         coro_init(TSRMLS_C);
     }
 
-    callback = i_zval_dup(callback);
-    i_zval_add_ref(&callback);
+    callback = c_zval_dup(callback);
+    c_zval_add_ref(&callback);
 
     zval *retval = NULL;
     zval *args[1];
@@ -99,7 +99,7 @@ PHP_FUNCTION(coroutine_create)
     }
     else
     {
-        i_zval_free(callback);
+        c_zval_free(callback);
     }
 
     efree(func_cache);
@@ -120,8 +120,12 @@ PHP_FUNCTION(coroutine_create)
     }
     if (retval != NULL)
     {
-        i_zval_ptr_dtor(&retval);
+        c_zval_ptr_dtor(&retval);
     }
+    
+    zval *return_co=NULL;
+    C_MAKE_STD_ZVAL(return_co);    
+
     RETURN_TRUE;
 }
 
@@ -143,7 +147,7 @@ PHP_METHOD(coroutine,read)
     }
 #endif
 
-    int fd = i_convert_to_fd(handle TSRMLS_CC);
+    int fd = c_convert_to_fd(handle TSRMLS_CC);
     struct stat file_stat;
     if (fstat(fd, &file_stat) < 0)
     {
@@ -200,6 +204,11 @@ PHP_METHOD(coroutine,yield)
     coro_yield();
 }
 
+PHP_METHOD(coroutine,resume)
+{
+
+}
+
 PHP_METHOD(coroutine,test)
 {
     zval *arguments;
@@ -212,7 +221,7 @@ PHP_METHOD(coroutine,test)
         RETURN_FALSE;
     }
 
-    int fd = i_convert_to_fd(arguments TSRMLS_CC);
+    int fd = c_convert_to_fd(arguments TSRMLS_CC);
         
     struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
     memset(stEvent,0,sizeof(struct epoll_event));

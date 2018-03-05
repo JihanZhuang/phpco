@@ -13,8 +13,8 @@
 #define CORO_LIMIT 2
 #define CORO_SAVE 3
 
-#define I_EX_CV_NUM(ex, n) (((zval ***)(((char *)(ex)) + ZEND_MM_ALIGNED_SIZE(sizeof(zend_execute_data)))) + n)
-#define I_EX_CV(var) (*I_EX_CV_NUM(execute_data, var))
+#define C_EX_CV_NUM(ex, n) (((zval ***)(((char *)(ex)) + ZEND_MM_ALIGNED_SIZE(sizeof(zend_execute_data)))) + n)
+#define C_EX_CV(var) (*C_EX_CV_NUM(execute_data, var))
 
 typedef struct _php_context php_context;
 typedef struct _coro_task coro_task;
@@ -22,9 +22,9 @@ typedef struct _react_global react_global;
 
 typedef enum
 {
-    I_CORO_CONTEXT_RUNNING,
-    I_CORO_CONTEXT_IN_DELAYED_TIMEOUT_LIST,
-    I_CORO_CONTEXT_TERM
+    C_CORO_CONTEXT_RUNNING,
+    C_CORO_CONTEXT_IN_DELAYED_TIMEOUT_LIST,
+    C_CORO_CONTEXT_TERM
 } php_context_state;
 
 struct _php_context
@@ -96,34 +96,34 @@ extern react_global RG;
 #define get_current_cid() COROG.current_coro->cid
 extern jmp_buf *checkPoint;
 
-int i_coro_resume_parent(php_context *current_context, zval *retval, zval *coro_retval);
+int c_coro_resume_parent(php_context *current_context, zval *retval, zval *coro_retval);
 
 int coro_init(TSRMLS_D);
 void coro_yield();
 
 #if PHP_MAJOR_VERSION >= 7
 #define coro_create(op_array, argv, argc, retval, post_callback, param) \
-        i_coro_create(op_array, argv, argc, *retval, post_callback, param)
+        c_coro_create(op_array, argv, argc, *retval, post_callback, param)
 #define coro_save(php_context) \
-        i_coro_save(return_value, php_context);
+        c_coro_save(return_value, php_context);
 #define coro_resume(current_context, retval, coro_retval) \
-        i_coro_resume(current_context, retval, *coro_retval)
+        c_coro_resume(current_context, retval, *coro_retval)
 #define coro_resume_parent(current_context, retval, coro_retval) \
-        i_coro_resume_parent(current_context, retval, coro_retval)
+        c_coro_resume_parent(current_context, retval, coro_retval)
 
-int i_coro_create(zend_fcall_info_cache *op_array, zval **argv, int argc, zval *retval, void *post_callback, void *param);
-php_context *i_coro_save(zval *return_value, php_context *php_context);
-int i_coro_resume(php_context *current_context, zval *retval, zval *coro_retval);
+int c_coro_create(zend_fcall_info_cache *op_array, zval **argv, int argc, zval *retval, void *post_callback, void *param);
+php_context *c_coro_save(zval *return_value, php_context *php_context);
+int c_coro_resume(php_context *current_context, zval *retval, zval *coro_retval);
 
 #else
 
-#define coro_create i_coro_create
-#define coro_save(php_context) i_coro_save(return_value, return_value_ptr, i_php_context)
-#define coro_resume i_coro_resume
+#define coro_create c_coro_create
+#define coro_save(php_context) c_coro_save(return_value, return_value_ptr, c_php_context)
+#define coro_resume c_coro_resume
 #define coro_resume_parent(current_context, retval, coro_retval) \
 
-int i_coro_create(zend_fcall_info_cache *op_array, zval **argv, int argc, zval **retval, void *post_callback, void *param);
-php_context *i_coro_save(zval *return_value, zval **return_value_ptr, php_context *php_context);
-int i_coro_resume(php_context *current_context, zval *retval, zval **coro_retval);
+int c_coro_create(zend_fcall_info_cache *op_array, zval **argv, int argc, zval **retval, void *post_callback, void *param);
+php_context *c_coro_save(zval *return_value, zval **return_value_ptr, php_context *php_context);
+int c_coro_resume(php_context *current_context, zval *retval, zval **coro_retval);
 #endif
 #endif
