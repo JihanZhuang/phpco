@@ -7,6 +7,7 @@
 jmp_buf *checkPoint = NULL;
 coro_global COROG;
 react_global RG;
+php_context *cid_context_map[32769]={0};
 
 static int alloc_cidmap();
 static void free_cidmap(int cid);

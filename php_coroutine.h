@@ -14,12 +14,10 @@
 #include <sys/epoll.h> 
 #include <fcntl.h>
 #include <unistd.h>
-#include "phpco.h"
+#include "include/phpco.h"
 #include "php7_wrapper.h"
 #include "coroutine_util.h"
 #include "coroutine_event.h"
-
-
 
 extern zend_module_entry coroutine_module_entry;
 PHP_MINIT_FUNCTION(coroutine);

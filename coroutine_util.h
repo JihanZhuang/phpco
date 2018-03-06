@@ -95,6 +95,7 @@ extern coro_global COROG;
 extern react_global RG;
 #define get_current_cid() COROG.current_coro->cid
 extern jmp_buf *checkPoint;
+extern  php_context *cid_context_map[32769];
 
 int c_coro_resume_parent(php_context *current_context, zval *retval, zval *coro_retval);
 

@@ -51,6 +51,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_test, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_yield, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
@@ -123,8 +125,6 @@ PHP_FUNCTION(coroutine_create)
         c_zval_ptr_dtor(&retval);
     }
     
-    zval *return_co=NULL;
-    C_MAKE_STD_ZVAL(return_co);    
 
     RETURN_TRUE;
 }
@@ -197,10 +197,19 @@ PHP_METHOD(coroutine,read)
     coro_yield();
 }
 
+PHP_METHOD(coroutine,get_current_cid)
+{
+    int cid;
+    cid=get_current_cid();
+    RETURN_LONG(cid);
+}
+
 PHP_METHOD(coroutine,yield)
 {
     php_context *context =emalloc(sizeof(php_context));
     coro_save(context);
+    int cid = get_current_cid();
+    cid_context_map[cid]=context;
     coro_yield();
 }
 
@@ -287,6 +296,7 @@ const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      test, arginfo_coroutine_test,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     //PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
