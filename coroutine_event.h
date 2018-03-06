@@ -1,6 +1,5 @@
 #ifndef _PHP_COROUTINE_EVENT_H_
 #define _PHP_COROUTINE_EVENT_H_
-#include "php_coroutine.h"
 typedef struct _aio_event
 {
     int fd;

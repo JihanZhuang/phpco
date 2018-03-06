@@ -215,7 +215,29 @@ PHP_METHOD(coroutine,yield)
 
 PHP_METHOD(coroutine,resume)
 {
-
+    int cid;
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &cid) == FAILURE)
+    {   
+        return;
+    }
+    if(cid_context_map[cid]==NULL){
+        RETURN_FALSE;
+    }
+    zval *retval = NULL;
+    zval *result = NULL; 
+    jmp_buf *prev_checkpoint = checkPoint;
+    php_context *context=cid_context_map[cid];
+    checkPoint = emalloc(sizeof(jmp_buf));
+    int ret = coro_resume(context, result, &retval);
+    if (ret == CORO_END && retval)
+    {
+        c_zval_ptr_dtor(&retval);
+    }
+    c_zval_ptr_dtor(&result);
+    efree(context);
+    checkPoint=prev_checkpoint;
+    RETURN_TRUE; 
+        
 }
 
 PHP_METHOD(coroutine,test)

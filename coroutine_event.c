@@ -1,3 +1,4 @@
+#include "php_coroutine.h"
 #include "coroutine_event.h"
 int aio_event_store(aio_event *ev)
 {
