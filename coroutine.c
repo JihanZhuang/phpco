@@ -21,7 +21,7 @@ static void aio_onReadCompleted(aio_event *event)
     efree(context);
 }
 
-static void aio_test(aio_event *event)
+static void aio_invoke(aio_event *event)
 {
     zval *retval = NULL;
     zval *result = NULL;
@@ -49,7 +49,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_test, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_accept, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -248,7 +248,7 @@ PHP_METHOD(coroutine,resume)
         
 }
 
-PHP_METHOD(coroutine,test)
+PHP_METHOD(coroutine,socket_accept)
 {
     zval *arguments;
     int args_count=ZEND_NUM_ARGS();
@@ -270,7 +270,7 @@ PHP_METHOD(coroutine,test)
     php_context *context = emalloc(sizeof(php_context));
     //补充字符'\0'
     ev->php_context = context;
-    ev->callback = aio_test;
+    ev->callback = aio_invoke;
     ev->fd = fd;
     ev->function_name="socket_accept";
     ev->arguments=arguments;
@@ -326,7 +326,7 @@ const zend_function_entry coroutine_function[]={
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-    PHP_ME(coroutine,      test, arginfo_coroutine_test,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      socket_accept, arginfo_coroutine_socket_accept,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)

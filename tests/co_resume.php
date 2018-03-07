@@ -15,4 +15,4 @@ co::create(function()use(&$arr){
     co::resume($cid);
     }
 });
-
+var_dump("test_ok");
