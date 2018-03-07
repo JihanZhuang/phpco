@@ -1,0 +1,41 @@
+<?php
+$arr=array();
+$socks=array();
+$address = '0.0.0.0';
+$port = 9302;
+
+if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
+    echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
+}
+
+if (socket_bind($sock, $address, $port) === false) {
+    echo "socket_bind() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
+}
+if (socket_listen($sock, 5) === false) {
+    echo "socket_listen() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
+}
+socket_set_nonblock($sock);
+co::create(function()use(&$arr,&$socks){
+    $cid=co::get_current_cid();
+    for(;;){
+        if(empty($socks)){
+            $arr[] =$cid;
+            co::yield();
+        }
+        $fd=array_shift($socks);
+        $data=co::socket_read($fd,1024);
+var_dump($data);
+    }
+});
+co::create(function()use(&$sock,&$arr,&$socks){
+    for(;;){
+    if(empty($arr)){
+        continue;
+        }
+       $fd=co::socket_accept($sock); 
+       $socks[]=$fd;
+       $cid=array_shift($arr);
+       co::resume($cid);
+    }
+});
+co::event_loop();

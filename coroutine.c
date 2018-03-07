@@ -51,6 +51,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_accept, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_read, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_yield, 0, 0, 1)
@@ -293,6 +295,52 @@ PHP_METHOD(coroutine,socket_accept)
     coro_yield();        
 }
 
+PHP_METHOD(coroutine,socket_read)
+{
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+    
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0);
+
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }
+
+    int fd = c_convert_to_fd(arguments TSRMLS_CC);
+        
+    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+    memset(stEvent,0,sizeof(struct epoll_event));
+    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
+    bzero(ev, sizeof(aio_event));
+
+    php_context *context = emalloc(sizeof(php_context));
+    //补充字符'\0'
+    ev->php_context = context;
+    ev->callback = aio_invoke;
+    ev->fd = fd;
+    ev->function_name="socket_read";
+    ev->arguments=arguments;
+    ev->args_count=args_count;
+
+    stEvent->data.ptr=ev;
+    stEvent->events=EPOLLIN;
+    ev->ep_event=stEvent;
+
+    int ret = aio_event_store(ev);
+    if (ret < 0)
+    {
+        efree(context);
+        free(stEvent);
+        free(ev);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();        
+}
+
+
 PHP_METHOD(coroutine,event_loop)
 {
     struct epoll_event event;
@@ -310,11 +358,9 @@ PHP_METHOD(coroutine,event_loop)
                 aio_event *ev=(aio_event *)events[i].data.ptr; 
                 ev->callback(ev);
                 aio_event_free(ev);
-                goto end;
             }
         }
     }    
-    end:;
 }
 
 
@@ -327,6 +373,7 @@ const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_accept, arginfo_coroutine_socket_accept,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      socket_read, arginfo_coroutine_socket_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
