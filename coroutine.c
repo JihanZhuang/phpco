@@ -239,6 +239,7 @@ PHP_METHOD(coroutine,resume)
         c_zval_ptr_dtor(&retval);
     }
     efree(context);
+    efree(checkPoint);
     checkPoint=prev_checkpoint;
     coro_resume_parent(ctx, retval, retval);
     COROG.require = required;
@@ -316,6 +317,7 @@ PHP_METHOD(coroutine,event_loop)
     end:;
 }
 
+
 const zend_function_entry coroutine_function[]={
 	PHP_FE(coroutine_create, arginfo_coroutine_create)
     PHP_FALIAS(co, coroutine_create, arginfo_coroutine_create)
@@ -338,10 +340,19 @@ PHP_MINIT_FUNCTION(coroutine)
 	zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
 	return SUCCESS;
 }
+PHP_RSHUTDOWN_FUNCTION(coroutine)
+{
+    if(checkPoint)
+    {
+        efree(checkPoint);
+    }
+    return SUCCESS;
+}
+
 /* {{{ PHP_MSHUTDOWN_FUNCTION */
 PHP_MSHUTDOWN_FUNCTION(coroutine)
 {
-	return SUCCESS;
+    return SUCCESS;
 }
 /* }}} */ 
 zend_module_entry coroutine_module_entry = {
@@ -353,7 +364,7 @@ zend_module_entry coroutine_module_entry = {
     PHP_MINIT(coroutine), /* MINIT */
     PHP_MSHUTDOWN(coroutine), /* MSHUTDOWN */
     NULL, /* RINIT */
-    NULL, /* RSHUTDOWN */
+    PHP_RSHUTDOWN(coroutine), /* RSHUTDOWN */
     NULL, /* MINFO */
 #if ZEND_MODULE_API_NO >= 20010901
     "0.1",
