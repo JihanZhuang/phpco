@@ -14,16 +14,23 @@ int aio_event_free(aio_event *ev)
         return C_OK;
     }
  
-    if (ev->fd != 0) {
+/*    if (ev->fd != 0) {
         close(ev->fd);
         ev->fd = 0;
-    }
+    }*/
+
+    if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
+        return C_ERR;
+    }   
+    RG.nfds--;
  
     if (ev->ep_event != NULL) {
         free(ev->ep_event);
     }
  
     free(ev);
+    
+    return C_OK;
 }
 
 int socket_setnonblock(int fd)
