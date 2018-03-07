@@ -55,6 +55,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_yield, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_resume, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
@@ -228,14 +230,19 @@ PHP_METHOD(coroutine,resume)
     jmp_buf *prev_checkpoint = checkPoint;
     php_context *context=cid_context_map[cid];
     checkPoint = emalloc(sizeof(jmp_buf));
+    int required = COROG.require;
+    php_context *ctx = emalloc(sizeof(php_context));
+    coro_save(ctx);
     int ret = coro_resume(context, result, &retval);
     if (ret == CORO_END && retval)
     {
         c_zval_ptr_dtor(&retval);
     }
-    c_zval_ptr_dtor(&result);
     efree(context);
     checkPoint=prev_checkpoint;
+    coro_resume_parent(ctx, retval, retval);
+    COROG.require = required;
+    efree(ctx);
     RETURN_TRUE; 
         
 }
@@ -321,7 +328,7 @@ const zend_function_entry coroutine_method[]={
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-    //PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END
 };
 PHP_MINIT_FUNCTION(coroutine)
