@@ -2,7 +2,7 @@
 $arr=array();
 $socks=array();
 $address = '0.0.0.0';
-$port = 9302;
+$port = 9301;
 
 if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
     echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
@@ -17,13 +17,16 @@ if (socket_listen($sock, 5) === false) {
 socket_set_nonblock($sock);
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
-    $fd=0;
+    $fd=null;
     for(;;){
-        if(empty($socks)&&$fd==0){
+        if(empty($socks)&&$fd==null){
             $arr[] =$cid;
             co::yield();
         }
+        if(!empty($socks)&&$fd==null){
         $fd=array_shift($socks);
+        }
+var_dump("test");
         $data=co::socket_read($fd,1024);
 var_dump($data);
     }

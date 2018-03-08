@@ -8,6 +8,13 @@ int aio_event_store(aio_event *ev)
     RG.nfds++;
     return C_OK;
 }
+int delete_event(aio_event *ev)
+{
+    if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
+        return C_ERR;
+    }
+    return C_OK;
+}
 int aio_event_free(aio_event *ev)
 {
     if (ev == NULL) {
@@ -19,9 +26,10 @@ int aio_event_free(aio_event *ev)
         ev->fd = 0;
     }*/
 
-    if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
+/*    if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
         return C_ERR;
     }   
+*/
     
     if(ev->timer){
         free(ev->timer);

@@ -18,4 +18,5 @@ typedef struct _aio_event
 int c_convert_to_fd(zval *zfd TSRMLS_DC);
 int aio_event_store(aio_event *event);
 int aio_event_free(aio_event *event);
+int delete_event(aio_event *ev);
 #endif

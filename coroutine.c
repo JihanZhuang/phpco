@@ -415,6 +415,7 @@ PHP_METHOD(coroutine,event_loop)
         {
             if(events[i].events&EPOLLIN){
                 aio_event *ev=(aio_event *)events[i].data.ptr; 
+                delete_event(ev);
                 ev->callback(ev);
                 aio_event_free(ev);
             }
