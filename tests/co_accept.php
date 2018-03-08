@@ -17,8 +17,9 @@ if (socket_listen($sock, 5) === false) {
 socket_set_nonblock($sock);
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
+    $fd=0;
     for(;;){
-        if(empty($socks)){
+        if(empty($socks)&&$fd==0){
             $arr[] =$cid;
             co::yield();
         }
@@ -30,6 +31,7 @@ var_dump($data);
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
     if(empty($arr)){
+        co::sleep(1);
         continue;
         }
        $fd=co::socket_accept($sock); 
