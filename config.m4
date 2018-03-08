@@ -10,6 +10,7 @@ if test "$PHP_COROUTINE" != "no"; then
   PHP_NEW_EXTENSION(coroutine,\
     coroutine.c \
     coroutine_util.c \
-    coroutine_event.c , $ext_shared)
+    coroutine_event.c \
+    coroutine_timer.c , $ext_shared)
   PHP_SUBST(COROUTINE_SHARED_LIBADD)
 fi

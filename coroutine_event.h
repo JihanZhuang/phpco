@@ -9,6 +9,7 @@ typedef struct _aio_event
     void *req;
     void *php_context;
     struct epoll_event *ep_event;
+    void *timer;
     zval *arguments;
     int args_count;
     char *function_name;

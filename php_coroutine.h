@@ -18,6 +18,8 @@
 #include "php7_wrapper.h"
 #include "coroutine_util.h"
 #include "coroutine_event.h"
+#include "coroutine_timer.h"
+
 
 extern zend_module_entry coroutine_module_entry;
 PHP_MINIT_FUNCTION(coroutine);

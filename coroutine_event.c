@@ -22,6 +22,10 @@ int aio_event_free(aio_event *ev)
     if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
         return C_ERR;
     }   
+    
+    if(ev->timer){
+        free(ev->timer);
+    }
     RG.nfds--;
  
     if (ev->ep_event != NULL) {

@@ -28,9 +28,10 @@ static void aio_invoke(aio_event *event)
     zval function_name;
 
     C_MAKE_STD_ZVAL(result);   
-
-    ZVAL_STRING(&function_name,event->function_name);
-    call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
+    if(event->function_name){
+        ZVAL_STRING(&function_name,event->function_name);
+        call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
+    }
  
     php_context *context = (php_context *) event->php_context;
     int ret = coro_resume(context, result, &retval);
@@ -52,6 +53,8 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_accept, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_read, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_sleep, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -340,6 +343,62 @@ PHP_METHOD(coroutine,socket_read)
     coro_yield();        
 }
 
+PHP_METHOD(coroutine,sleep)
+{
+    zend_long timeout = 0;
+
+#ifdef FAST_ZPP
+    ZEND_PARSE_PARAMETERS_START(1, 2)
+        Z_PARAM_LONG(timeout)
+    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
+#else
+    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &timeout) == FAILURE)
+    {
+        return;
+    }
+#endif
+
+    if(timeout<=0){
+        RETURN_TRUE;
+    }
+    //create timefd
+    struct timespec now;
+    struct itimerspec *new_value;
+    time_t interval=timeout;
+    new_value=(struct itimerspec *)malloc(sizeof(struct itimerspec));
+    int fd=create_timerfd(new_value,interval);
+    timerfd_settime(fd,TFD_TIMER_ABSTIME,new_value,NULL);
+        
+    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+    memset(stEvent,0,sizeof(struct epoll_event));
+    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
+    bzero(ev, sizeof(aio_event));
+
+
+    php_context *context = emalloc(sizeof(php_context));
+    //补充字符'\0'
+    ev->php_context = context;
+    ev->callback = aio_invoke;
+    ev->fd = fd;
+    ev->timer=new_value;
+    ev->function_name=NULL;
+    
+    stEvent->data.ptr=ev;    
+    stEvent->events=EPOLLIN | EPOLLET;
+    ev->ep_event=stEvent;
+
+    int ret = aio_event_store(ev);
+    if (ret < 0)
+    {
+        efree(context);
+        free(stEvent);
+        free(ev);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();
+}
 
 PHP_METHOD(coroutine,event_loop)
 {
@@ -376,6 +435,7 @@ const zend_function_entry coroutine_method[]={
     PHP_ME(coroutine,      socket_read, arginfo_coroutine_socket_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      sleep, arginfo_coroutine_sleep,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END
