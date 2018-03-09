@@ -277,7 +277,7 @@ PHP_METHOD(coroutine,socket_accept)
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
-    ev->function_name="socket_accept";
+    ev->function_name="stream_socket_accept";
     ev->arguments=arguments;
     ev->args_count=args_count;
 
@@ -322,7 +322,7 @@ PHP_METHOD(coroutine,socket_read)
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
-    ev->function_name="socket_read";
+    ev->function_name="stream_socket_recvfrom";
     ev->arguments=arguments;
     ev->args_count=args_count;
 
