@@ -42,6 +42,7 @@ static void aio_invoke(aio_event *event)
     c_zval_ptr_dtor(&result);
     efree(context);
     efree(event->arguments);
+    zval_dtor(&function_name);
 
 }
 
@@ -277,7 +278,7 @@ PHP_METHOD(coroutine,socket_accept)
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
-    ev->function_name="stream_socket_accept";
+    ev->function_name="socket_accept";
     ev->arguments=arguments;
     ev->args_count=args_count;
 
@@ -322,7 +323,7 @@ PHP_METHOD(coroutine,socket_read)
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
-    ev->function_name="stream_socket_recvfrom";
+    ev->function_name="socket_read";
     ev->arguments=arguments;
     ev->args_count=args_count;
 
