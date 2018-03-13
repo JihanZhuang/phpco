@@ -31,6 +31,7 @@ static void aio_invoke(aio_event *event)
     if(event->function_name){
         ZVAL_STRING(&function_name,event->function_name);
         call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
+        efree(event->arguments);
     }
  
     php_context *context = (php_context *) event->php_context;
@@ -41,7 +42,6 @@ static void aio_invoke(aio_event *event)
     }
     c_zval_ptr_dtor(&result);
     efree(context);
-    efree(event->arguments);
     zval_dtor(&function_name);
 
 }
@@ -278,6 +278,7 @@ PHP_METHOD(coroutine,socket_accept)
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
+    ev->is_accept_fd=1;
     ev->function_name="socket_accept";
     ev->arguments=arguments;
     ev->args_count=args_count;
