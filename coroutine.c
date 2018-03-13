@@ -2,25 +2,6 @@
 static zend_class_entry coroutine_util_ce;
 static zend_class_entry *coroutine_util_class_entry_ptr;
 
-static void aio_onReadCompleted(aio_event *event)
-{
-    zval *retval = NULL;
-    zval *result = NULL;
-    C_MAKE_STD_ZVAL(result);
-    
-    ZVAL_BOOL(result, 1);
-
-    php_context *context = (php_context *) event->php_context;
-    int ret = coro_resume(context, result, &retval);
-    if (ret == CORO_END && retval)
-    {
-        c_zval_ptr_dtor(&retval);
-    }
-    c_zval_ptr_dtor(&result);
-    efree(event->buf);
-    efree(context);
-}
-
 static void aio_invoke(aio_event *event)
 {
     zval *retval = NULL;
@@ -48,8 +29,6 @@ static void aio_invoke(aio_event *event)
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_accept, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -137,74 +116,6 @@ PHP_FUNCTION(coroutine_create)
     RETURN_TRUE;
 }
 
-PHP_METHOD(coroutine,read)
-{
-    zval *handle;
-    zend_long length = 0;
-
-#ifdef FAST_ZPP
-    ZEND_PARSE_PARAMETERS_START(1, 2)
-        Z_PARAM_RESOURCE(handle)
-        Z_PARAM_OPTIONAL
-        Z_PARAM_LONG(length)
-    ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
-#else
-    if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r|l", &handle, &length) == FAILURE)
-    {
-        return;
-    }
-#endif
-
-    int fd = c_convert_to_fd(handle TSRMLS_CC);
-    struct stat file_stat;
-    if (fstat(fd, &file_stat) < 0)
-    {
-        RETURN_FALSE;
-    }
-    
-    off_t _seek = lseek(fd, 0, SEEK_CUR);
-    if (length <= 0 || file_stat.st_size - _seek < length)
-    {
-        length = file_stat.st_size - _seek;
-    }
-    
-    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
-    memset(stEvent,0,sizeof(struct epoll_event));
-    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
-    bzero(ev, sizeof(aio_event));
-
-    ev->nbytes = length + 1;
-    ev->buf = emalloc(ev->nbytes);
-    if (!ev->buf)
-    {
-        RETURN_FALSE;
-    }
-
-    php_context *context = emalloc(sizeof(php_context));
-    //补充字符'\0'
-    ((char *) ev->buf)[length] = 0;
-    ev->php_context = context;
-    ev->callback = aio_onReadCompleted;
-    ev->fd = fd;
-    ev->offset = _seek;
-    
-    stEvent->data.ptr=ev;    
-    stEvent->events=EPOLLIN;
-    ev->ep_event=stEvent;
-
-    int ret = aio_event_store(ev);
-    if (ret < 0)
-    {
-        efree(context);
-        free(stEvent);
-        free(ev);
-        RETURN_FALSE;
-    }
-
-    coro_save(context);
-    coro_yield();
-}
-
 PHP_METHOD(coroutine,get_current_cid)
 {
     int cid;
@@ -267,32 +178,13 @@ PHP_METHOD(coroutine,socket_accept)
     }
     
     int fd = c_convert_to_fd(arguments TSRMLS_CC);
-        
-    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
-    memset(stEvent,0,sizeof(struct epoll_event));
-    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
-    bzero(ev, sizeof(aio_event));
 
     php_context *context = emalloc(sizeof(php_context));
-    //补充字符'\0'
-    ev->php_context = context;
-    ev->callback = aio_invoke;
-    ev->fd = fd;
-    ev->is_accept_fd=1;
-    ev->function_name="socket_accept";
-    ev->arguments=arguments;
-    ev->args_count=args_count;
-
-    stEvent->data.ptr=ev;
-    stEvent->events=EPOLLIN;
-    ev->ep_event=stEvent;
-
-    int ret = aio_event_store(ev);
+    
+    int ret = aio_event_store(fd,context,aio_invoke,"socket_read",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
-        free(stEvent);
-        free(ev);
         RETURN_FALSE;
     }
 
@@ -316,21 +208,26 @@ PHP_METHOD(coroutine,socket_read)
         
     struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
     memset(stEvent,0,sizeof(struct epoll_event));
-    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
-    bzero(ev, sizeof(aio_event));
-
+    stEvent->events=EPOLLIN;
     php_context *context = emalloc(sizeof(php_context));
-    //补充字符'\0'
+    aio_event *ev = RG.aio_event_fds[fd];
+    if(ev){
+        efree(ev->php_context);
+        efree(ev->arguments);
+        efree(ev->args_count);
+        efree(ev->ep_event);
+    }else{
+        aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
+        memset(ev,0, sizeof(aio_event));
+    }
     ev->php_context = context;
     ev->callback = aio_invoke;
     ev->fd = fd;
     ev->function_name="socket_read";
     ev->arguments=arguments;
     ev->args_count=args_count;
-
-    stEvent->data.ptr=ev;
-    stEvent->events=EPOLLIN;
     ev->ep_event=stEvent;
+
 
     int ret = aio_event_store(ev);
     if (ret < 0)
@@ -433,7 +330,6 @@ const zend_function_entry coroutine_function[]={
 };
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(coroutine,      read, arginfo_coroutine_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_accept, arginfo_coroutine_socket_accept,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_read, arginfo_coroutine_socket_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)

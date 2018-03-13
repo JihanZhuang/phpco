@@ -2,11 +2,8 @@
 #include "zend_API.h"
 #include "ext/standard/php_lcg.h"
 
-#include "coroutine_util.h"
-
 jmp_buf *checkPoint = NULL;
 coro_global COROG;
-react_global RG;
 php_context *cid_context_map[32769]={0};
 
 static int alloc_cidmap();
@@ -55,6 +52,7 @@ int coro_init(TSRMLS_D)
     RG.init=1;
     RG.epollfd = epoll_create(DEFAULT_MAX_EVENT);
     RG.nfds = 0;
+    memset(RG.aio_event_fds,0,sizeof(aio_event *)*102400);
     checkPoint = emalloc(sizeof(jmp_buf));
     return 0;
 }

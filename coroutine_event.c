@@ -1,11 +1,35 @@
 #include "php_coroutine.h"
-#include "coroutine_event.h"
-int aio_event_store(aio_event *ev)
+react_global RG;
+int aio_event_store(int fd,php_context *context,void *callback,char *function_name,zval *arguments,int args_count)
 {
-    if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->fd,ev->ep_event)==-1){
-        return C_ERR;
-    }
-    RG.nfds++;
+    aio_event *ev = RG.aio_event_fds[fd];
+    if(ev){
+        efree(ev->php_context);
+        efree(ev->arguments);
+        efree(ev->args_count);
+        efree(ev->ep_event);
+    }else{
+        aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
+        memset(ev,0, sizeof(aio_event));
+        struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+        memset(stEvent,0,sizeof(struct epoll_event));
+        stEvent->events=EPOLLIN;
+        ev->ep_event=stEvent;
+        if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,ev->fd,ev->ep_event)==-1){
+            free(ev);
+            free(stEvent);
+            return C_ERR;
+        }
+        RG.nfds++;
+ 
+    }   
+    ev->php_context = context;
+    ev->callback = callback;
+    ev->fd = fd; 
+    ev->function_name=function_name;
+    ev->arguments=arguments;
+    ev->args_count=args_count;
+    RG.aio_event_fds[fd]=ev;
     return C_OK;
 }
 int delete_event(aio_event *ev)

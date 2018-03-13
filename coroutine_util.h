@@ -18,7 +18,6 @@
 
 typedef struct _php_context php_context;
 typedef struct _coro_task coro_task;
-typedef struct _react_global react_global;
 
 typedef enum
 {
@@ -68,14 +67,6 @@ struct _coro_task
     void *post_callback_params;
 };
 
-
-typedef struct _react_global
-{
-    int init;
-    int epollfd;
-    int nfds;//record fd nums
-}; 
-
 typedef struct _coro_global
 {
     uint32_t coro_num;
@@ -91,9 +82,8 @@ typedef struct _coro_global
     coro_task *current_coro;
     zend_bool require;
 } coro_global;
-extern coro_global COROG;
-extern react_global RG;
 #define get_current_cid() COROG.current_coro->cid
+extern coro_global COROG;
 extern jmp_buf *checkPoint;
 extern  php_context *cid_context_map[32769];
 

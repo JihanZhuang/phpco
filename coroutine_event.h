@@ -16,8 +16,18 @@ typedef struct _aio_event
     char *function_name;
     void (*callback)(struct _aio_event *event);
 } aio_event;
+typedef struct _react_global react_global;
+typedef struct _react_global
+{
+    int init;
+    int epollfd;
+    aio_event *aio_event_fds[102400];
+    int nfds;//record fd nums
+};
+extern react_global RG;
+
 int c_convert_to_fd(zval *zfd TSRMLS_DC);
-int aio_event_store(aio_event *event);
+int aio_event_store(int fd,php_context *context,void *callback,char *function_name,zval *arguments,int args_count);
 int aio_event_free(aio_event *event);
 int delete_event(aio_event *ev);
 #endif
