@@ -7,6 +7,7 @@
 #endif
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
+#include "zend_types.h"
 #include <sys/socket.h> 
 #include <sys/wait.h> 
 #include <netinet/in.h> 

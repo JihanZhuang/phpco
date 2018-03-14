@@ -2,7 +2,7 @@
 $arr=array();
 $socks=array();
 $address = '0.0.0.0';
-$port = 9302;
+$port = $argv[1];
 
 if (($sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) === false) {
     echo "socket_create() failed: reason: " . socket_strerror(socket_last_error()) . "\n";
@@ -29,7 +29,7 @@ co::create(function()use(&$arr,&$socks){
 //var_dump("test");
 var_dump($fd);
         $data=co::socket_read($fd,1024);
-//var_dump($data);
+var_dump($data);
     }
 });
 
@@ -47,20 +47,44 @@ co::create(function()use(&$arr,&$socks){
 //var_dump("test");
 var_dump($fd);
         $data=co::socket_read($fd,1024);
-//var_dump($data);
+var_dump($data);
     }
 });
+co::create(function()use(&$arr,&$socks){
+    $cid=co::get_current_cid();
+    $fd=null;
+    for(;;){
+        if(empty($socks)&&$fd==null){
+            $arr[] =$cid;
+            co::yield();
+        }
+//var_dump(!empty($socks)&&$fd==null);
+        if(!empty($socks)&&$fd==null){
+        $fd=array_shift($socks);
+        }
+//var_dump("test");
+var_dump($fd);
+        $data=co::socket_read($fd,1024);
+var_dump($data);
+    }
+});
+
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
     if(empty($arr)){
         co::sleep(1);
         continue;
         }
+if(!$socks){
        $fd=co::socket_accept($sock); 
        $socks[]=$fd;
-var_dump($fd);
+//var_dump($fd,$socks);
+if(!empty($arr))
+{
        $cid=array_shift($arr);
        co::resume($cid);
+}
     }
+}
 });
 co::event_loop();

@@ -13,6 +13,7 @@ static void aio_invoke(aio_event *event)
         ZVAL_STRING(&function_name,event->function_name);
         call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
         efree(event->arguments);
+        zval_dtor(&function_name);
     }
  
     php_context *context = (php_context *) event->php_context;
@@ -23,8 +24,6 @@ static void aio_invoke(aio_event *event)
     }
     c_zval_ptr_dtor(&result);
     efree(context);
-    zval_dtor(&function_name);
-
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
@@ -181,7 +180,7 @@ PHP_METHOD(coroutine,socket_accept)
 
     php_context *context = emalloc(sizeof(php_context));
     
-    int ret = aio_event_store(fd,context,aio_invoke,"socket_read",arguments,args_count);
+    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN|EPOLLRDHUP,NULL,"socket_accept",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
@@ -203,38 +202,18 @@ PHP_METHOD(coroutine,socket_read)
         efree(arguments);
         RETURN_FALSE;
     }
-
+    printf("this gc_count is %d",GC_REFCOUNT((zend_reference *)arguments));
     int fd = c_convert_to_fd(arguments TSRMLS_CC);
-        
-    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
-    memset(stEvent,0,sizeof(struct epoll_event));
-    stEvent->events=EPOLLIN;
-    php_context *context = emalloc(sizeof(php_context));
-    aio_event *ev = RG.aio_event_fds[fd];
-    if(ev){
-        efree(ev->php_context);
-        efree(ev->arguments);
-        efree(ev->args_count);
-        efree(ev->ep_event);
-    }else{
-        aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
-        memset(ev,0, sizeof(aio_event));
+    if (fd < 0)
+    {
+        RETURN_FALSE;
     }
-    ev->php_context = context;
-    ev->callback = aio_invoke;
-    ev->fd = fd;
-    ev->function_name="socket_read";
-    ev->arguments=arguments;
-    ev->args_count=args_count;
-    ev->ep_event=stEvent;
-
-
-    int ret = aio_event_store(ev);
+        
+    php_context *context = emalloc(sizeof(php_context));
+    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN,NULL,"socket_read",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
-        free(stEvent);
-        free(ev);
         RETURN_FALSE;
     }
 
@@ -267,31 +246,13 @@ PHP_METHOD(coroutine,sleep)
     new_value=(struct itimerspec *)malloc(sizeof(struct itimerspec));
     int fd=create_timerfd(new_value,interval);
     timerfd_settime(fd,TFD_TIMER_ABSTIME,new_value,NULL);
-        
-    struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
-    memset(stEvent,0,sizeof(struct epoll_event));
-    aio_event *ev = (aio_event *) malloc(sizeof(aio_event));
-    bzero(ev, sizeof(aio_event));
-
-
-    php_context *context = emalloc(sizeof(php_context));
-    //补充字符'\0'
-    ev->php_context = context;
-    ev->callback = aio_invoke;
-    ev->fd = fd;
-    ev->timer=new_value;
-    ev->function_name=NULL;
     
-    stEvent->data.ptr=ev;    
-    stEvent->events=EPOLLIN | EPOLLET;
-    ev->ep_event=stEvent;
+    php_context *context = emalloc(sizeof(php_context));
 
-    int ret = aio_event_store(ev);
+    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN,new_value,NULL,NULL,NULL);
     if (ret < 0)
     {
         efree(context);
-        free(stEvent);
-        free(ev);
         RETURN_FALSE;
     }
 
@@ -313,10 +274,9 @@ PHP_METHOD(coroutine,event_loop)
         for(i=0;i<nfds;i++)
         {
             if(events[i].events&EPOLLIN){
-                aio_event *ev=(aio_event *)events[i].data.ptr; 
-                delete_event(ev);
+                aio_event *ev=(aio_event *)events[i].data.ptr;
+                ev=RG.aio_event_fds[ev->fd];
                 ev->callback(ev);
-                aio_event_free(ev);
             }
         }
     }    
