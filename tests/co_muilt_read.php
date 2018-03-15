@@ -52,6 +52,10 @@ var_dump($data);
 });
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
+/*if(empty($arr)){
+    co::sleep(1);
+    continue;
+}*/
        $fd=co::socket_accept($sock); 
        $socks[]=$fd;
 var_dump($fd,$socks);

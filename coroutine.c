@@ -15,7 +15,6 @@ static void aio_invoke(aio_event *event)
         efree(event->arguments);
         zval_dtor(&function_name);
     }
- 
     php_context *context = (php_context *) event->php_context;
     int ret = coro_resume(context, result, &retval);
     if (ret == CORO_END && retval)
@@ -279,7 +278,8 @@ PHP_METHOD(coroutine,event_loop)
                 if(ev&&ev->callback){
                     ev->callback(ev);
                 }
-                aio_event_free(ev);
+                
+                aio_event_free(ev); 
             }
         }
     }    

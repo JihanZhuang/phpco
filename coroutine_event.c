@@ -46,7 +46,7 @@ int aio_event_free(aio_event *ev)
  
     switch(ev->fd_type){
         case FD_TYPE_ACCEPT:
-                            RG.aio_event_fds[ev->fd]=NULL;
+    //                        RG.aio_event_fds[ev->fd]=NULL;
                             break;
         case FD_TYPE_TIMMER:
                             epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
@@ -58,7 +58,7 @@ int aio_event_free(aio_event *ev)
                             free(ev);
                             break;
         case FD_TYPE_NORMAL:
-                            RG.aio_event_fds[ev->fd]=NULL; 
+      //                      RG.aio_event_fds[ev->fd]=NULL; 
                             break;
         default:break;
     }
