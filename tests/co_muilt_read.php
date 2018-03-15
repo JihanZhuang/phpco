@@ -50,25 +50,6 @@ var_dump($fd);
 var_dump($data);
     }
 });
-co::create(function()use(&$arr,&$socks){
-    $cid=co::get_current_cid();
-    $fd=null;
-    for(;;){
-        if(empty($socks)&&$fd==null){
-            $arr[] =$cid;
-            co::yield();
-        }
-//var_dump(!empty($socks)&&$fd==null);
-        if(!empty($socks)&&$fd==null){
-        $fd=array_shift($socks);
-        }
-//var_dump("test");
-var_dump($fd);
-        $data=co::socket_read($fd,1024);
-var_dump($data);
-    }
-});
-
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
     if(empty($arr)){

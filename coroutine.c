@@ -180,7 +180,7 @@ PHP_METHOD(coroutine,socket_accept)
 
     php_context *context = emalloc(sizeof(php_context));
     
-    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN|EPOLLRDHUP,NULL,"socket_accept",arguments,args_count);
+    int ret = aio_event_store(fd,FD_TYPE_ACCEPT,context,aio_invoke,EPOLLIN|EPOLLRDHUP,NULL,"socket_accept",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
@@ -202,7 +202,6 @@ PHP_METHOD(coroutine,socket_read)
         efree(arguments);
         RETURN_FALSE;
     }
-    printf("this gc_count is %d",GC_REFCOUNT((zend_reference *)arguments));
     int fd = c_convert_to_fd(arguments TSRMLS_CC);
     if (fd < 0)
     {
@@ -210,7 +209,7 @@ PHP_METHOD(coroutine,socket_read)
     }
         
     php_context *context = emalloc(sizeof(php_context));
-    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN,NULL,"socket_read",arguments,args_count);
+    int ret = aio_event_store(fd,FD_TYPE_NORMAL,context,aio_invoke,EPOLLIN,NULL,"socket_read",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
@@ -249,7 +248,7 @@ PHP_METHOD(coroutine,sleep)
     
     php_context *context = emalloc(sizeof(php_context));
 
-    int ret = aio_event_store(fd,context,aio_invoke,EPOLLIN,new_value,NULL,NULL,NULL);
+    int ret = aio_event_store(fd,FD_TYPE_TIMMER,context,aio_invoke,EPOLLIN|EPOLLET,new_value,NULL,NULL,NULL);
     if (ret < 0)
     {
         efree(context);
@@ -264,7 +263,8 @@ PHP_METHOD(coroutine,event_loop)
 {
     struct epoll_event event;
     struct epoll_event *events;
-    int nfds,i;
+    int nfds,i,fd;
+    aio_event *ev;
     events = calloc (DEFAULT_MAX_EVENT, sizeof(event));
 
 
@@ -274,9 +274,12 @@ PHP_METHOD(coroutine,event_loop)
         for(i=0;i<nfds;i++)
         {
             if(events[i].events&EPOLLIN){
-                aio_event *ev=(aio_event *)events[i].data.ptr;
-                ev=RG.aio_event_fds[ev->fd];
-                ev->callback(ev);
+                fd=events[i].data.fd;
+                ev=RG.aio_event_fds[fd];
+                if(ev->callback){
+                    ev->callback(ev);
+                }
+                aio_event_free(ev);
             }
         }
     }    

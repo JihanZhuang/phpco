@@ -31,7 +31,7 @@ typedef struct _react_global
 extern react_global RG;
 
 int c_convert_to_fd(zval *zfd TSRMLS_DC);
-int aio_event_store(int fd,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count);
+int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count);
 int aio_event_free(aio_event *event);
 int delete_event(aio_event *ev);
 #endif

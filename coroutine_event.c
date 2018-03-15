@@ -1,6 +1,6 @@
 #include "php_coroutine.h"
 react_global RG;
-int aio_event_store(int fd,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count)
+int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count)
 {
     aio_event *ev;
     ev=RG.aio_event_fds[fd];
@@ -11,7 +11,7 @@ int aio_event_store(int fd,php_context *context,void *callback,__uint32_t events
         memset(stEvent,0,sizeof(struct epoll_event));
         stEvent->events=events;
         ev->ep_event=stEvent;
-        stEvent->data.ptr=ev;
+        stEvent->data.fd=fd;
         if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,fd,stEvent)==-1){
             free(ev);
             free(stEvent);
@@ -28,6 +28,7 @@ int aio_event_store(int fd,php_context *context,void *callback,__uint32_t events
     ev->arguments=arguments;
     ev->args_count=args_count;
     ev->timer=timer;
+    ev->fd_type=fd_type;
     return C_OK;
 }
 int delete_event(aio_event *ev)
@@ -43,26 +44,21 @@ int aio_event_free(aio_event *ev)
         return C_OK;
     }
  
-/*    if (ev->fd != 0) {
-        close(ev->fd);
-        ev->fd = 0;
-    }*/
-
-/*    if(epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event)==-1){
-        return C_ERR;
-    }   
-*/
-    
-    if(ev->timer){
-        free(ev->timer);
+    switch(ev->fd_type){
+        case FD_TYPE_ACCEPT:
+                            break;
+        case FD_TYPE_TIMMER:
+                            epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
+                            close(ev->fd);
+                            free(ev->timer);
+                            free(ev->ep_event);
+                            RG.nfds--;
+                            free(ev);
+                            break;
+        case FD_TYPE_NORMAL:
+                            break;
+        default:break;
     }
-    RG.nfds--;
- 
-    if (ev->ep_event != NULL) {
-        free(ev->ep_event);
-    }
- 
-    free(ev);
     
     return C_OK;
 }
