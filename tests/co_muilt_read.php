@@ -52,20 +52,14 @@ var_dump($data);
 });
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
-    if(empty($arr)){
-        co::sleep(1);
-        continue;
-        }
-if(!$socks){
        $fd=co::socket_accept($sock); 
        $socks[]=$fd;
-//var_dump($fd,$socks);
+var_dump($fd,$socks);
 if(!empty($arr))
 {
        $cid=array_shift($arr);
        co::resume($cid);
 }
-    }
 }
 });
 co::event_loop();
