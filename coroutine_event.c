@@ -49,6 +49,7 @@ int aio_event_free(aio_event *ev)
                             break;
         case FD_TYPE_TIMMER:
                             epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
+                            RG.aio_event_fds[ev->fd]=NULL;
                             close(ev->fd);
                             free(ev->timer);
                             free(ev->ep_event);
