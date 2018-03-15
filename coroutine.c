@@ -276,7 +276,7 @@ PHP_METHOD(coroutine,event_loop)
             if(events[i].events&EPOLLIN){
                 fd=events[i].data.fd;
                 ev=RG.aio_event_fds[fd];
-                if(ev->callback){
+                if(ev&&ev->callback){
                     ev->callback(ev);
                 }
                 aio_event_free(ev);
