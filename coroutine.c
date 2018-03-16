@@ -41,6 +41,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_accept, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_write, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_sleep, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_close, 0, 0, 1)
@@ -230,6 +232,36 @@ PHP_METHOD(coroutine,socket_read)
     coro_yield();        
 }
 
+PHP_METHOD(coroutine,socket_write)
+{
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+    
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0);
+
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }
+    int fd = c_convert_to_fd(arguments TSRMLS_CC);
+    if (fd < 0)
+    {
+        RETURN_FALSE;
+    }
+        
+    php_context *context = emalloc(sizeof(php_context));
+    int ret = aio_event_store(fd,FD_TYPE_NORMAL,context,aio_invoke,EPOLLOUT,NULL,"socket_write",arguments,args_count);
+    if (ret < 0)
+    {
+        efree(context);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();        
+}
+
+
 PHP_METHOD(coroutine,sleep)
 {
     zend_long timeout = 0;
@@ -310,6 +342,10 @@ PHP_METHOD(coroutine,event_loop)
                 fd=events[i].data.fd;
                 ev=RG.aio_event_fds[fd];
                 aio_invoke(ev);
+            }else if(events[i].events&EPOLLOUT){
+                fd=events[i].data.fd;
+                ev=RG.aio_event_fds[fd];
+                aio_invoke(ev);
             }
         }
     }    
@@ -325,6 +361,7 @@ const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_accept, arginfo_coroutine_socket_accept,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_read, arginfo_coroutine_socket_read,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      socket_write, arginfo_coroutine_socket_write,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      sleep, arginfo_coroutine_sleep,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
