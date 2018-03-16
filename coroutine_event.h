@@ -26,7 +26,6 @@ typedef struct _react_global
     int epollfd;
     aio_event *aio_event_fds[102400];
     int nfds;//record fd nums
-    int yield_count;
 };
 extern react_global RG;
 

@@ -3,32 +3,42 @@ react_global RG;
 int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count)
 {
     aio_event *ev;
+    struct epoll_event *stEvent;
     ev=RG.aio_event_fds[fd];
     if(!ev){
+        //init ev and stEvent
         ev = (aio_event *) malloc(sizeof(aio_event));
         memset(ev,0, sizeof(aio_event));
-        struct epoll_event *stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
+        stEvent=(struct epoll_event *)malloc(sizeof(struct epoll_event));
         memset(stEvent,0,sizeof(struct epoll_event));
-        stEvent->events=events;
         ev->ep_event=stEvent;
+        ev->fd=fd;
         stEvent->data.fd=fd;
+        RG.aio_event_fds[fd]=ev;
+    }else{
+        stEvent=ev->ep_event;
+    } 
+    //if fd has been close ,the events is zero and fd has been del in epoll,need to readd
+    if(stEvent->events==0){
+        stEvent->events=events;
         if(epoll_ctl(RG.epollfd,EPOLL_CTL_ADD,fd,stEvent)==-1){
             free(ev);
             free(stEvent);
+            RG.aio_event_fds[fd]=NULL;
             return C_ERR;
         }
-        RG.aio_event_fds[fd]=ev;
-        RG.nfds++;
- 
-    }   
-    ev->php_context = context;
-    ev->callback = callback;
-    ev->fd = fd; 
-    ev->function_name=function_name;
-    ev->arguments=arguments;
-    ev->args_count=args_count;
-    ev->timer=timer;
-    ev->fd_type=fd_type;
+    }
+
+    //had been invoked,so can set new event
+    if(!ev->php_context){
+        ev->php_context = context;
+        ev->callback = callback;
+        ev->function_name=function_name;
+        ev->arguments=arguments;
+        ev->args_count=args_count;
+        ev->timer=timer;
+        ev->fd_type=fd_type;
+    }
     return C_OK;
 }
 int delete_event(aio_event *ev)
@@ -43,25 +53,36 @@ int aio_event_free(aio_event *ev)
     if (ev == NULL) {
         return C_OK;
     }
+    ev->php_context=NULL;
+    ev->callback=NULL;
+    ev->function_name=NULL;
+    ev->args_count=0;
+    if(ev->arguments){
+        efree(ev->arguments);
+        ev->arguments=NULL;
+    }
  
     switch(ev->fd_type){
-        case FD_TYPE_ACCEPT:
-    //                        RG.aio_event_fds[ev->fd]=NULL;
+        case FD_TYPE_ACCEPT: 
+                            epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
+                            ev->ep_event->events=0;
                             break;
         case FD_TYPE_TIMMER:
                             epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
-                            RG.aio_event_fds[ev->fd]=NULL;
                             close(ev->fd);
-                            free(ev->timer);
-                            free(ev->ep_event);
-                            RG.nfds--;
-                            free(ev);
+                            ev->ep_event->events=0;
+                            if(ev->timer){
+                                free(ev->timer);
+                            }
+                            ev->timer=NULL;
                             break;
         case FD_TYPE_NORMAL:
-      //                      RG.aio_event_fds[ev->fd]=NULL; 
+                            epoll_ctl(RG.epollfd,EPOLL_CTL_DEL,ev->fd,ev->ep_event);
+                            ev->ep_event->events=0;
                             break;
         default:break;
     }
+    ev->fd_type=0;
     
     return C_OK;
 }

@@ -15,6 +15,7 @@ if (socket_listen($sock, 5) === false) {
     echo "socket_listen() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
 }
 //socket_set_nonblock($sock);
+var_dump($sock);
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
     $fd=null;
@@ -52,10 +53,11 @@ var_dump($data);
 });
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
-/*if(empty($arr)){
+if(empty($arr)){
+    var_dump("sleep");
     co::sleep(1);
     continue;
-}*/
+}
        $fd=co::socket_accept($sock); 
        $socks[]=$fd;
 var_dump($fd,$socks);

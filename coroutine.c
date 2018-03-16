@@ -4,25 +4,33 @@ static zend_class_entry *coroutine_util_class_entry_ptr;
 
 static void aio_invoke(aio_event *event)
 {
+    if(!event){
+        return ;
+    }
     zval *retval = NULL;
     zval *result = NULL;
     zval function_name;
 
-    C_MAKE_STD_ZVAL(result);   
     if(event->function_name){
         ZVAL_STRING(&function_name,event->function_name);
         call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
-        efree(event->arguments);
         zval_dtor(&function_name);
     }
+    
     php_context *context = (php_context *) event->php_context;
-    int ret = coro_resume(context, result, &retval);
-    if (ret == CORO_END && retval)
-    {
-        c_zval_ptr_dtor(&retval);
+    //must be free before resume,because the event may be used when resume
+    aio_event_free(event);
+    if(context){
+        int ret = coro_resume(context, result, &retval);
+        if (ret == CORO_END && retval)
+        {
+            c_zval_ptr_dtor(&retval);
+        }
+        efree(context);
     }
-    c_zval_ptr_dtor(&result);
-    efree(context);
+    if(result!=NULL){
+        c_zval_ptr_dtor(&result);
+    }
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
@@ -246,8 +254,8 @@ PHP_METHOD(coroutine,sleep)
     timerfd_settime(fd,TFD_TIMER_ABSTIME,new_value,NULL);
     
     php_context *context = emalloc(sizeof(php_context));
-
-    int ret = aio_event_store(fd,FD_TYPE_TIMMER,context,aio_invoke,EPOLLIN|EPOLLET,new_value,NULL,NULL,NULL);
+    //php_printf("sleep_fd is %d\n",fd);
+    int ret = aio_event_store(fd,FD_TYPE_TIMMER,context,aio_invoke,EPOLLIN/*|EPOLLONESHOT*/,new_value,NULL,NULL,NULL);
     if (ret < 0)
     {
         efree(context);
@@ -275,11 +283,7 @@ PHP_METHOD(coroutine,event_loop)
             if(events[i].events&EPOLLIN){
                 fd=events[i].data.fd;
                 ev=RG.aio_event_fds[fd];
-                if(ev&&ev->callback){
-                    ev->callback(ev);
-                }
-                
-                aio_event_free(ev); 
+                aio_invoke(ev);
             }
         }
     }    
