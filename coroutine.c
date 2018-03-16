@@ -15,7 +15,6 @@ static void aio_invoke(aio_event *event)
     if(event->function_name){
         ZVAL_STRING(&function_name,event->function_name);
         call_user_function(EG(function_table),NULL,&function_name,&result,event->args_count,event->arguments);    
-        used=1;
         zval_dtor(&function_name);
     }
     
@@ -30,7 +29,7 @@ static void aio_invoke(aio_event *event)
         }
         efree(context);
     }
-    if(used==1){
+    if(event->function_name){
         zval_dtor(&result);
     }
 }
@@ -43,6 +42,8 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_read, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_sleep, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_close, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -268,6 +269,29 @@ PHP_METHOD(coroutine,sleep)
     coro_yield();
 }
 
+PHP_METHOD(coroutine,socket_close)
+{
+    zval function_name;
+    zval retval;
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+   
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0); 
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }
+    int fd = c_convert_to_fd(arguments TSRMLS_CC);
+    ZVAL_STRING(&function_name,"socket_close");
+    
+    call_user_function(EG(function_table),NULL,&function_name,&retval,args_count,arguments);
+    aio_event *ev=RG.aio_event_fds[fd];
+    aio_event_free(ev);
+    efree(arguments);
+    zval_dtor(&function_name);
+    RETURN_ZVAL(&retval,0,1);
+}
+
 PHP_METHOD(coroutine,event_loop)
 {
     struct epoll_event event;
@@ -304,6 +328,7 @@ const zend_function_entry coroutine_method[]={
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      sleep, arginfo_coroutine_sleep,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      socket_close, arginfo_coroutine_socket_close,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END

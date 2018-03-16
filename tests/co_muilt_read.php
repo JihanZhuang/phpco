@@ -16,7 +16,7 @@ if (socket_listen($sock, 5) === false) {
 }
 //socket_set_nonblock($sock);
 var_dump($sock);
-co::create(function()use(&$arr,&$socks){
+/*co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
     $fd=null;
     for(;;){
@@ -32,7 +32,7 @@ var_dump($fd);
         $data=co::socket_read($fd,1024);
 var_dump($data);
     }
-});
+});*/
 
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
@@ -49,6 +49,9 @@ co::create(function()use(&$arr,&$socks){
 var_dump($fd);
         $data=co::socket_read($fd,1024);
 var_dump($data);
+        $ret=co::socket_close($fd);
+        var_dump($ret,$fd);
+        $fd=null;
     }
 });
 co::create(function()use(&$sock,&$arr,&$socks){
