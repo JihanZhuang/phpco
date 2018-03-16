@@ -8,12 +8,14 @@ static void aio_invoke(aio_event *event)
         return ;
     }
     zval *retval = NULL;
-    zval *result = NULL;
+    zval result;
     zval function_name;
+    int used=0;
 
     if(event->function_name){
         ZVAL_STRING(&function_name,event->function_name);
-        call_user_function(EG(function_table),NULL,&function_name,result,event->args_count,event->arguments);    
+        call_user_function(EG(function_table),NULL,&function_name,&result,event->args_count,event->arguments);    
+        used=1;
         zval_dtor(&function_name);
     }
     
@@ -21,15 +23,15 @@ static void aio_invoke(aio_event *event)
     //must be free before resume,because the event may be used when resume
     aio_event_free(event);
     if(context){
-        int ret = coro_resume(context, result, &retval);
+        int ret = coro_resume(context, &result, &retval);
         if (ret == CORO_END && retval)
         {
             c_zval_ptr_dtor(&retval);
         }
         efree(context);
     }
-    if(result!=NULL){
-        c_zval_ptr_dtor(&result);
+    if(used==1){
+        zval_dtor(&result);
     }
 }
 
