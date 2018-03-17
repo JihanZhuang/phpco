@@ -28,14 +28,12 @@ $foo=function()use(&$arr,&$socks){
         $fd=array_shift($socks);
         }
 //var_dump("test");
-var_dump($fd);
+//var_dump($fd);
         $data=co::socket_read($fd,1024);
-var_dump($data);
+//var_dump($data);
    $content="hello world!"; 
         $header = "Server: coroutine" . "\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
-        co::socket_write($fd,"HTTP/1.1 200 OK\r\n");
-        co::socket_write($fd,"Content-Type: text/html;charset=utf-8\r\n");
-        co::socket_write($fd,$header.$content);
+        co::socket_write($fd,"HTTP/1.1 200 OK\r\n"."Content-Type: text/html;charset=utf-8\r\n".$header.$content);
         co::socket_close($fd);
         unset($fd);
         $fd=null;
@@ -48,10 +46,11 @@ $pid = pcntl_fork();
         } elseif (0 !== $pid) {
             continue;
         }
-for($i=0;$i<1;$i++){
+for($i=0;$i<5;$i++){
 co::create($foo);
 }
 co::create(function()use(&$sock,&$arr,&$socks){
+$pid=getmypid();
     for(;;){
 /*if(empty($arr)){
     var_dump("sleep");
@@ -60,7 +59,7 @@ co::create(function()use(&$sock,&$arr,&$socks){
 }*/
      $fd=co::socket_accept($sock); 
        $socks[]=$fd;
-var_dump($fd,count($socks));
+//var_dump("pid is $pid\n",count($socks));
 if(!empty($arr))
 {
        $cid=array_shift($arr);
@@ -70,3 +69,4 @@ if(!empty($arr))
 });
 co::event_loop();
 }
+exit(0);
