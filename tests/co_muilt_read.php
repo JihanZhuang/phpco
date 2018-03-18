@@ -1,4 +1,9 @@
 <?php
+    set_error_handler('error_handler');
+
+    function error_handler($errno, $errstr, $errfile, $errline) {
+        throw new Exception($errstr);
+    }
 $arr=array();
 $socks=array();
 $address = '0.0.0.0';
@@ -29,34 +34,19 @@ co::create(function()use(&$arr,&$socks){
         }
 //var_dump("test");
 var_dump($fd);
+try{
         $data=co::socket_read($fd,1024);
 var_dump($data);
+}catch(\Exception $e){
+var_dump($e);
+var_dump("all is well!");
+exit;
+}
     
         co::socket_write($fd,"PONG+");
     }
 });
 
-co::create(function()use(&$arr,&$socks){
-    $cid=co::get_current_cid();
-    $fd=null;
-    for(;;){
-        if(empty($socks)&&$fd==null){
-            $arr[] =$cid;
-            co::yield();
-        }
-        if(!empty($socks)&&$fd==null){
-        $fd=array_shift($socks);
-        }
-//var_dump("test");
-var_dump($fd);
-        $data=co::socket_read($fd,1024);
-var_dump($data);
-        co::socket_write($fd,"PONG+");
-  //      $ret=co::socket_close($fd);
-  //      var_dump($ret,$fd);
-  //      $fd=null;
-    }
-});
 co::create(function()use(&$sock,&$arr,&$socks){
     for(;;){
 if(empty($arr)){
