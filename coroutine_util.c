@@ -1,13 +1,36 @@
 #include "php_coroutine.h"
 #include "zend_API.h"
 #include "ext/standard/php_lcg.h"
+#include <sys/mman.h>  
+#include <pthread.h> 
 
 jmp_buf *checkPoint = NULL;
 coro_global COROG;
 php_context *cid_context_map[32769]={0};
+pthread_mutex_t *inner_server_mutex;
 
 static int alloc_cidmap();
 static void free_cidmap(int cid);
+
+//创建共享的mutex  
+void initMutex()  
+{  
+    //设置互斥量为进程间共享  
+    inner_server_mutex=(pthread_mutex_t*)mmap(NULL, sizeof(pthread_mutex_t), PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANON, -1, 0);  
+    if( MAP_FAILED==inner_server_mutex) {  
+        perror("mutex mmap failed");  
+        exit(1);  
+    }  
+    //设置attr的属性  
+    pthread_mutexattr_t attr;  
+    pthread_mutexattr_init(&attr);  
+    int ret = pthread_mutexattr_setpshared(&attr,PTHREAD_PROCESS_SHARED);  
+    if(ret != 0) {  
+        fprintf(stderr, "mutex set shared failed");  
+        exit(1);  
+    }  
+    pthread_mutex_init(inner_server_mutex, &attr);  
+}  
 
 #if PHP_MAJOR_VERSION >= 7 && PHP_MINOR_VERSION >= 2
 static inline void c_vm_stack_init(void)

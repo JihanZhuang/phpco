@@ -3,6 +3,8 @@
 #include "php_coroutine.h"
 #include "zend_API.h"
 #include "ext/standard/php_lcg.h"
+#include <sys/mman.h>  
+#include <pthread.h>
 
 #define DEFAULT_MAX_CORO_NUM 3000
 #define DEFAULT_STACK_SIZE   8192
@@ -86,6 +88,7 @@ typedef struct _coro_global
 extern coro_global COROG;
 extern jmp_buf *checkPoint;
 extern  php_context *cid_context_map[32769];
+extern pthread_mutex_t *inner_server_mutex;
 
 int c_coro_resume_parent(php_context *current_context, zval *retval, zval *coro_retval);
 
