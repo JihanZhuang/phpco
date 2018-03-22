@@ -192,7 +192,7 @@ PHP_METHOD(coroutine,socket_accept)
 
     php_context *context = emalloc(sizeof(php_context));
     
-    int ret = aio_event_store(fd,FD_TYPE_ACCEPT,context,aio_invoke,EPOLLIN|EPOLLRDHUP,NULL,"socket_accept",arguments,args_count);
+    int ret = aio_event_store(fd,FD_TYPE_ACCEPT,context,aio_invoke,EPOLLIN|EPOLLRDHUP ,NULL,"socket_accept",arguments,args_count);
     if (ret < 0)
     {
         efree(context);
@@ -331,7 +331,7 @@ PHP_METHOD(coroutine,event_loop)
     int nfds,i,fd;
     aio_event *ev;
     events = calloc (DEFAULT_MAX_EVENT, sizeof(event));
-
+ 
 
     for(;;)
     {
@@ -346,6 +346,7 @@ PHP_METHOD(coroutine,event_loop)
                 fd=events[i].data.fd;
                 ev=RG.aio_event_fds[fd];
                 aio_invoke(ev);
+            }else{  
             }
         }
     }    

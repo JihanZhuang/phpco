@@ -15,6 +15,7 @@ if (socket_listen($sock, 5) === false) {
     echo "socket_listen() failed: reason: " . socket_strerror(socket_last_error($sock)) . "\n";
 }
 socket_set_nonblock($sock);
+socket_set_option($sock, SOL_SOCKET, SO_REUSEPORT, 1);
 var_dump($sock);
 $foo=function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
@@ -39,7 +40,7 @@ $foo=function()use(&$arr,&$socks){
         $fd=null;
     }
 };
-for($k=0;$k<1;$k++){
+for($k=0;$k<3;$k++){
 $pid = pcntl_fork();
         if (-1 === $pid) {
             throw new Exception("fork fail");
@@ -58,9 +59,11 @@ $pid=getmypid();
     continue;
 }*/
      $fd=co::socket_accept($sock); 
+    if($fd){
        $socks[]=$fd;
+}
 //var_dump("pid is $pid\n",count($socks));
-if(!empty($arr))
+if(!empty($arr)&&!empty($socks))
 {
        $cid=array_shift($arr);
        co::resume($cid);
