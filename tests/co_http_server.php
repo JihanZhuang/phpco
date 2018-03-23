@@ -34,7 +34,7 @@ $foo=function()use(&$arr,&$socks){
 //var_dump($data);
 $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, array("sec"=>1, "usec"=>0));
-socket_connect($socket, 'www.baidu.com', 80);
+socket_connect($socket, '0.0.0.0', 80);
 //var_dump($socket);
 //里面的换行代表 \r\n 注意拷贝的代码后面可能有空格
 $http = <<<eof
@@ -45,11 +45,30 @@ Host: www.mafengwo.cn\r\n
 Connection: Close\r\n
 eof;
 co::socket_write($socket, $http, strlen($http));
-//while($str = co::socket_read($socket, 1024))
-//{
+while($str = co::socket_read($socket, 1024))
+{
 //  echo $str;
-//}
+}
 socket_close($socket);
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+socket_set_option($socket, SOL_SOCKET, SO_SNDTIMEO, array("sec"=>1, "usec"=>0));
+socket_connect($socket, '0.0.0.0', 80);
+//var_dump($socket);
+//里面的换行代表 \r\n 注意拷贝的代码后面可能有空格
+$http = <<<eof
+GET / HTTP/1.1\r\n
+Accept: */*\r\n
+User-Agent: Lowell-Agent
+Host: www.mafengwo.cn\r\n
+Connection: Close\r\n
+eof;
+co::socket_write($socket, $http, strlen($http));
+while($str = co::socket_read($socket, 1024))
+{
+//  echo $str;
+}
+socket_close($socket);
+
    $content="hello world!"; 
         $header = "Server: coroutine" . "\r\nContent-Length: " . strlen($content) . "\r\n\r\n";
         co::socket_write($fd,"HTTP/1.1 200 OK\r\n"."Content-Type: text/html;charset=utf-8\r\n".$header.$content);
@@ -58,7 +77,7 @@ socket_close($socket);
         $fd=null;
     }
 };
-for($k=0;$k<1;$k++){
+for($k=0;$k<3;$k++){
 $pid = pcntl_fork();
         if (-1 === $pid) {
             throw new Exception("fork fail");
