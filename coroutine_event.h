@@ -26,8 +26,15 @@ typedef struct _react_global
     int epollfd;
     aio_event *aio_event_fds[102400];
     int nfds;//record fd nums
+    Link *timeout_fd_link;
 };
 extern react_global RG;
+typedef struct _aio_timeout_element{
+    int fd;
+    int timeout;
+    int last_time;
+    unsigned char persistent;
+} aio_timeout_element;
 
 int c_convert_to_fd(zval *zfd TSRMLS_DC);
 int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count);

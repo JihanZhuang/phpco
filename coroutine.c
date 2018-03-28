@@ -45,6 +45,8 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_write, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_sleep, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_set_timeout, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_socket_close, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_get_current_cid, 0, 0, 1)
@@ -301,6 +303,24 @@ PHP_METHOD(coroutine,sleep)
     coro_yield();
 }
 
+PHP_METHOD(coroutine,socket_set_timeout)
+{
+    int timeout;
+    zval obj;
+    zend_bool persistent=0;
+    if(zend_parse_parameters(ZEND_NUM_ARGS(),"zl|b",&obj,&timeout,&persistent)){
+        RETURN_FALSE;
+    }
+    aio_timeout_element *ele=(aio_timeout_element *)malloc(sizeof(aio_timeout_element));
+    int fd=c_convert_to_fd(&obj TSRMLS_CC);
+    ele->fd=fd;
+    ele->timeout=timeout;
+    ele->last_time=0;
+    ele->persistent=persistent;
+    pushdata(RG.timeout_fd_link,ele);
+    RETURN_TRUE;
+}
+
 PHP_METHOD(coroutine,socket_close)
 {
     zval function_name;
@@ -349,6 +369,8 @@ PHP_METHOD(coroutine,event_loop)
             }else{  
             }
         }
+        //Link *head=RG.timeout_fd_link;
+        
     }    
 }
 
@@ -366,6 +388,7 @@ const zend_function_entry coroutine_method[]={
     PHP_ME(coroutine,      get_current_cid, arginfo_coroutine_get_current_cid,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      yield, arginfo_coroutine_yield,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      sleep, arginfo_coroutine_sleep,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+    PHP_ME(coroutine,      socket_set_timeout, arginfo_coroutine_socket_set_timeout,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      socket_close, arginfo_coroutine_socket_close,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      event_loop, arginfo_coroutine_event_loop,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
