@@ -1,4 +1,4 @@
-#include "link.h"
+#include "php_coroutine.h"
 Link *initqueue()      //构造一个空队列  
 {  
     Link *p;  
@@ -46,14 +46,12 @@ void delete_node(Link *p,datatype data){
         if(q->data==data){
             if(q==p->front){
                 p->front=p->front->next;
-                free(q);
             }else if(q==p->rear){
                 p->rear=f;
-                free(q);
             }else{
                 f->next=q->next;
-                free(q);
             }
+            free(q);
             p->size--;
             break;
         }else{

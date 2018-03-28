@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "include/phpco.h"
+#include "src/link/link.h"
 #include "php7_wrapper.h"
 #include "coroutine_util.h"
 #include "coroutine_event.h"
