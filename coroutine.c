@@ -397,6 +397,8 @@ PHP_METHOD(coroutine,event_loop)
                     }   
                     free(q);
                     RG.timeout_fd_link->size--;
+                }else{
+                    ele->last_time=get_current_time();
                 }
             }
             f=q;
