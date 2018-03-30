@@ -379,7 +379,7 @@ PHP_METHOD(coroutine,event_loop)
             }else{  
             }
         }
-        node *q=NULL;
+        node *q=NULL,*f=NULL;
         q=RG.timeout_fd_link->front;
         long now=get_current_time();
         while(q){
@@ -387,7 +387,20 @@ PHP_METHOD(coroutine,event_loop)
             if(ele->last_time+ele->timeout<=now){
                 ev=RG.aio_event_fds[ele->fd];
                 aio_invoke(ev);
+                if(!ele->persistent){
+                    if(q==RG.timeout_fd_link->front){
+                        RG.timeout_fd_link->front=RG.timeout_fd_link->front->next;
+                    }else if(q==RG.timeout_fd_link->rear){
+                        RG.timeout_fd_link->rear=f;
+                    }else{
+                        f->next=q->next;
+                    }   
+                    free(q);
+                    RG.timeout_fd_link->size--;
+                }
             }
+            f=q;
+            q=q->next;
         }
         
     }    
