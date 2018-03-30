@@ -34,6 +34,16 @@ static void aio_invoke(aio_event *event)
     }
 }
 
+long get_current_time(){
+
+struct timeval tv;
+
+gettimeofday(&tv,NULL);
+
+return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+
+}
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_create, 0, 0, 1)
     ZEND_ARG_INFO(0, callback)
 ZEND_END_ARG_INFO()
@@ -369,7 +379,16 @@ PHP_METHOD(coroutine,event_loop)
             }else{  
             }
         }
-        //Link *head=RG.timeout_fd_link;
+        node *q=NULL;
+        q=RG.timeout_fd_link;
+        long now=get_current_time();
+        while(q){
+            aio_timeout_element *ele=(aio_timeout_element *)q->data;
+            if(ele->last_time+ele->timeout<=now){
+                ev=RG.aio_event_fds[ele->fd];
+                aio_invoke(ev);
+            }
+        }
         
     }    
 }

@@ -31,8 +31,8 @@ typedef struct _react_global
 extern react_global RG;
 typedef struct _aio_timeout_element{
     int fd;
-    int timeout;
-    int last_time;
+    long timeout;
+    long last_time;
     unsigned char persistent;
 } aio_timeout_element;
 
