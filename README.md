@@ -7,5 +7,5 @@
 - socket资源var_dump的id释放(done)
 - socket需要超时控制(done)
 
-- 对象操作支持(redis,mysql)
+- 对象操作支持(redis,mysql),待实现
 
