@@ -16,7 +16,7 @@ if (socket_listen($sock, 5) === false) {
 }
 socket_set_nonblock($sock);
 var_dump($sock);
-co::socket_set_timeout($sock,1,true);
+co::socket_set_timeout($sock,1,false);
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
     $fd=null;
@@ -41,6 +41,7 @@ co::create(function()use(&$sock,&$arr,&$socks){
         }
        $fd=co::socket_accept($sock); 
 var_dump($fd);
+if(!$fd){continue;}
        $socks[]=$fd;
        $cid=array_shift($arr);
        co::resume($cid);
