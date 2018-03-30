@@ -6,9 +6,7 @@ Link *initqueue()      //构造一个空队列
     if(p == NULL)  
         exit(0);  //log
     p->front = NULL;
-    p->front->next = NULL;      
     p->rear = NULL;
-    p->rear->next = NULL;    
     p->size = 0;  
     return p;  
 }  

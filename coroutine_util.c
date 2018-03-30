@@ -77,7 +77,6 @@ int coro_init(TSRMLS_D)
     RG.nfds = 0;
     memset(RG.aio_event_fds,0,sizeof(aio_event *)*102400);
     checkPoint = emalloc(sizeof(jmp_buf));
-    RG.timeout_fd_link=initqueue();
     return 0;
 }
 

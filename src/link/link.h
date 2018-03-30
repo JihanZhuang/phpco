@@ -3,7 +3,7 @@
 #include<stdio.h>  
 #include<stdlib.h>  
 #include<malloc.h>  
-typedef char datatype;
+typedef void* datatype;
 typedef struct NODE  
 {  
     datatype data;  

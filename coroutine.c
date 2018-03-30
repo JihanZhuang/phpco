@@ -316,18 +316,18 @@ PHP_METHOD(coroutine,sleep)
 PHP_METHOD(coroutine,socket_set_timeout)
 {
     int timeout;
-    zval obj;
+    zval *obj;
     zend_bool persistent=0;
     if(zend_parse_parameters(ZEND_NUM_ARGS(),"zl|b",&obj,&timeout,&persistent)){
         RETURN_FALSE;
     }
     aio_timeout_element *ele=(aio_timeout_element *)malloc(sizeof(aio_timeout_element));
-    int fd=c_convert_to_fd(&obj TSRMLS_CC);
+    int fd=c_convert_to_fd(obj TSRMLS_CC);
     ele->fd=fd;
     ele->timeout=timeout;
-    ele->last_time=0;
+    ele->last_time=get_current_time();
     ele->persistent=persistent;
-    pushdata(RG.timeout_fd_link,ele);
+    pushqueue(RG.timeout_fd_link,ele);
     RETURN_TRUE;
 }
 
@@ -380,7 +380,7 @@ PHP_METHOD(coroutine,event_loop)
             }
         }
         node *q=NULL;
-        q=RG.timeout_fd_link;
+        q=RG.timeout_fd_link->front;
         long now=get_current_time();
         while(q){
             aio_timeout_element *ele=(aio_timeout_element *)q->data;
@@ -418,6 +418,7 @@ PHP_MINIT_FUNCTION(coroutine)
 	INIT_CLASS_ENTRY(coroutine_util_ce,"coroutine",coroutine_method);
 	coroutine_util_class_entry_ptr = zend_register_internal_class(&coroutine_util_ce);
 	zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
+    RG.timeout_fd_link=initqueue();
 	return SUCCESS;
 }
 PHP_RSHUTDOWN_FUNCTION(coroutine)
