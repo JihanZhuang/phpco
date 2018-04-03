@@ -471,9 +471,10 @@ PHP_MINIT_FUNCTION(coroutine)
 	zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
     INIT_CLASS_ENTRY(co_pdo_ce,"Co\\PDO",co_pdo_method);
 	co_pdo_class_entry_ptr = zend_register_internal_class(&co_pdo_ce);
+    zend_declare_property_null(co_pdo_class_entry_ptr, "origin", strlen("origin"), ZEND_ACC_PUBLIC);
     INIT_CLASS_ENTRY(co_pdo_statement_ce,"Co\\PDOStatement",co_pdo_statement_method);
 	co_pdo_statement_class_entry_ptr = zend_register_internal_class(&co_pdo_statement_ce);
-
+    zend_declare_property_null(co_pdo_statement_class_entry_ptr, "origin", strlen("origin"), ZEND_ACC_PUBLIC);
 
     RG.timeout_fd_link=initqueue();
 	return SUCCESS;
