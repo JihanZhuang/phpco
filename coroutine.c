@@ -1,6 +1,10 @@
 #include "php_coroutine.h"
 static zend_class_entry coroutine_util_ce;
 static zend_class_entry *coroutine_util_class_entry_ptr;
+static zend_class_entry co_pdo_ce;
+static zend_class_entry *co_pdo_class_entry_ptr;
+static zend_class_entry co_pdo_statement_ce;
+static zend_class_entry *co_pdo_statement_class_entry_ptr;
 
 static void aio_invoke(aio_event *event)
 {
@@ -67,6 +71,13 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_resume, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___construct, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___invoke, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___invoke, 0, 0, 1)
+ZEND_END_ARG_INFO()
+
 
 PHP_FUNCTION(coroutine_create)
 {
@@ -362,8 +373,8 @@ PHP_METHOD(coroutine,event_loop)
     aio_event *ev;
     events = calloc (DEFAULT_MAX_EVENT, sizeof(event));
  
-
-    for(;;)
+    int test=0;
+    for(;test<100;test++)
     {
         nfds = epoll_wait (RG.epollfd, events,DEFAULT_MAX_EVENT,1000);
         for(i=0;i<nfds;i++)
@@ -428,11 +439,42 @@ const zend_function_entry coroutine_method[]={
     PHP_ME(coroutine,      resume, arginfo_coroutine_resume,    ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
     PHP_FE_END
 };
+
+PHP_METHOD(co_pdo,__construct){
+
+}
+
+PHP_METHOD(co_pdo,__invoke){
+
+}
+
+PHP_METHOD(co_pdo_statement,__invoke){
+
+}
+
+const zend_function_entry co_pdo_method[]={
+    PHP_ME(co_pdo,      __construct, arginfo_co_pdo___construct,    ZEND_ACC_PUBLIC)
+    PHP_ME(co_pdo,      __invoke, arginfo_co_pdo___invoke,    ZEND_ACC_PUBLIC)
+    PHP_FE_END
+};
+
+const zend_function_entry co_pdo_statement_method[]={
+    PHP_ME(co_pdo_statement,      __invoke, arginfo_co_pdo_statement___invoke,    ZEND_ACC_PUBLIC)
+    PHP_FE_END
+};
+
+
 PHP_MINIT_FUNCTION(coroutine)
 {
 	INIT_CLASS_ENTRY(coroutine_util_ce,"coroutine",coroutine_method);
 	coroutine_util_class_entry_ptr = zend_register_internal_class(&coroutine_util_ce);
 	zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
+    INIT_CLASS_ENTRY(co_pdo_ce,"Co\\PDO",co_pdo_method);
+	co_pdo_class_entry_ptr = zend_register_internal_class(&co_pdo_ce);
+    INIT_CLASS_ENTRY(co_pdo_statement_ce,"Co\\PDOStatement",co_pdo_statement_method);
+	co_pdo_statement_class_entry_ptr = zend_register_internal_class(&co_pdo_statement_ce);
+
+
     RG.timeout_fd_link=initqueue();
 	return SUCCESS;
 }
