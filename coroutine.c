@@ -334,6 +334,8 @@ PHP_METHOD(coroutine,socket_set_timeout)
     }
     aio_timeout_element *ele=(aio_timeout_element *)malloc(sizeof(aio_timeout_element));
     int fd=c_convert_to_fd(obj TSRMLS_CC);
+    //pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(obj);
+    //pdo_dbh_t *dbh = dbh_obj->inner;
     ele->fd=fd;
     ele->timeout=timeout;
     ele->last_time=get_current_time();

@@ -8,6 +8,7 @@
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
 #include "zend_types.h"
+#include "pdo/php_pdo_driver.h"
 #include <sys/socket.h> 
 #include <sys/wait.h> 
 #include <netinet/in.h> 
