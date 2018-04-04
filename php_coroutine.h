@@ -9,6 +9,8 @@
 #include "zend_interfaces.h"
 #include "zend_types.h"
 #include "pdo/php_pdo_driver.h"
+//#include "mysqlnd/mysqlnd_structs.h"
+#include "include/php_pdo_mysql_int.h"
 #include <sys/socket.h> 
 #include <sys/wait.h> 
 #include <netinet/in.h> 
