@@ -334,11 +334,11 @@ PHP_METHOD(coroutine,socket_set_timeout)
     }
     aio_timeout_element *ele=(aio_timeout_element *)malloc(sizeof(aio_timeout_element));
     int fd=c_convert_to_fd(obj TSRMLS_CC);
-    pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(obj);
+    /*pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(obj);
     pdo_dbh_t *dbh = dbh_obj->inner;
     pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
     MYSQLND *mysql_nd=(MYSQLND *)H->server;
-    php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&fd, 1);
+    php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&fd, 1);*/
     ele->fd=fd;
     ele->timeout=timeout;
     ele->last_time=get_current_time();
