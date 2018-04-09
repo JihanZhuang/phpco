@@ -339,6 +339,13 @@ PHP_METHOD(coroutine,socket_set_timeout)
     pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
     MYSQLND *mysql_nd=(MYSQLND *)H->server;
     php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&fd, 1);*/
+    
+    zend_string *class_name = NULL; 
+    class_name = Z_OBJ_P(obj)->handlers->get_class_name(Z_OBJ_P(obj));
+    zend_string *pdo_name=zend_string_init("PDO",strlen("PDO"),0);
+    if(zend_string_equals(class_name,pdo_name)){
+        printf("123");
+    }
     ele->fd=fd;
     ele->timeout=timeout;
     ele->last_time=get_current_time();
