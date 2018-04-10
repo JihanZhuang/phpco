@@ -15,11 +15,28 @@ static void aio_invoke(aio_event *event)
     zval result;
     zval function_name;
     int used=0;
+    ZVAL_NULL(&result);
 
-    if(event->function_name){
-        ZVAL_STRING(&function_name,event->function_name);
-        call_user_function(EG(function_table),NULL,&function_name,&result,event->args_count,event->arguments);    
-        zval_dtor(&function_name);
+    if(event->object){
+        if(strcmp(event->object_name,"PDO")==0){
+            if(strcmp(event->function_name,"prepare")==0){
+                 zval function_name;
+                   zval pdo_statement_obj;
+                   ZVAL_STRING(&function_name,event->function_name);
+                   call_user_function(NULL, event->object, &function_name, &pdo_statement_obj, event->args_count, event->arguments);
+                   zval_dtor(&function_name);
+                   object_init_ex(&result, co_pdo_statement_class_entry_ptr);
+                   zend_update_property(co_pdo_statement_class_entry_ptr, &result, "origin", sizeof("origin")-1, &pdo_statement_obj);        
+            }else{
+            }
+
+        }
+    }else{
+        if(event->function_name){
+            ZVAL_STRING(&function_name,event->function_name);
+            call_user_function(EG(function_table),NULL,&function_name,&result,event->args_count,event->arguments);    
+            zval_dtor(&function_name);
+        }
     }
     
     php_context *context = (php_context *) event->php_context;
@@ -516,14 +533,31 @@ PHP_METHOD(co_pdo,prepare){
     zval *origin;
     zval rv;
     origin=zend_read_property(co_pdo_class_entry_ptr,getThis(),"origin",sizeof("origin")-1,0,&rv);
-    zval function_name;
+    /*zval function_name;
     zval pdo_statement_obj;
     ZVAL_STRING(&function_name,"prepare");
     call_user_function(NULL, origin, &function_name, &pdo_statement_obj, args_count, arguments);
     zval_dtor(&function_name);
     efree(arguments);
     object_init_ex(return_value, co_pdo_statement_class_entry_ptr);
-    zend_update_property(co_pdo_statement_class_entry_ptr, return_value, "origin", sizeof("origin")-1, &pdo_statement_obj);
+    zend_update_property(co_pdo_statement_class_entry_ptr, return_value, "origin", sizeof("origin")-1, &pdo_statement_obj);*/
+    int fd = c_convert_to_fd(origin TSRMLS_CC);
+    if (fd < 0)
+    {
+        RETURN_FALSE;
+    }
+    
+    php_context *context = emalloc(sizeof(php_context));
+    int ret = aio_event_store_object(fd,FD_TYPE_NORMAL,context,aio_invoke,EPOLLOUT,NULL,origin,"PDO","prepare",arguments,args_count);
+    if (ret < 0)
+    {
+        efree(context);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();
+
 }
 
 PHP_METHOD(co_pdo_statement,__call){

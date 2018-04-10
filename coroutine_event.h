@@ -15,6 +15,7 @@ typedef struct _aio_event
     int fd_type;
     void *timer;
     void *object;
+    char *object_name;
     zval *arguments;
     int args_count;
     char *function_name;
@@ -38,7 +39,9 @@ typedef struct _aio_timeout_element{
 } aio_timeout_element;
 
 int c_convert_to_fd(zval *zfd TSRMLS_DC);
-int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count);
+int _aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,void *object,char *object_name,char *function_name,zval *arguments,int args_count);
+#define aio_event_store(fd,fd_type,context,callback,events,timer,function_name,arguments,args_count) _aio_event_store(fd,fd_type,context,callback,events,timer,NULL,NULL,function_name,arguments,args_count);
+#define aio_event_store_object(fd,fd_type,context,callback,events,timer,object,object_name,function_name,arguments,args_count) _aio_event_store(fd,fd_type,context,callback,events,timer,object,object_name,function_name,arguments,args_count);
 int aio_event_free(aio_event *event);
 int delete_event(aio_event *ev);
 #endif

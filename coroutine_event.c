@@ -1,6 +1,6 @@
 #include "php_coroutine.h"
 react_global RG;
-int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,char *function_name,zval *arguments,int args_count)
+int _aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uint32_t events,struct itimerspec *timer,void *object,char *object_name,char *function_name,zval *arguments,int args_count)
 {
     aio_event *ev;
     struct epoll_event *stEvent;
@@ -33,6 +33,8 @@ int aio_event_store(int fd,int fd_type,php_context *context,void *callback,__uin
     if(!ev->php_context){
         ev->php_context = context;
         ev->callback = callback;
+        ev->object=object;
+        ev->object_name=object_name;
         ev->function_name=function_name;
         ev->arguments=arguments;
         ev->args_count=args_count;
