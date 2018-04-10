@@ -161,6 +161,7 @@ int c_convert_to_fd(zval *zfd TSRMLS_DC)
     class_name = Z_OBJ_P(zfd)->handlers->get_class_name(Z_OBJ_P(zfd));
     zend_string *pdo_name=zend_string_init("PDO",strlen("PDO"),0);
     if(zend_string_equals(class_name,pdo_name)){
+        zend_string_release(pdo_name);
         pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(zfd);
         pdo_dbh_t *dbh = dbh_obj->inner;
         pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;

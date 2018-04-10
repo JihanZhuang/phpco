@@ -409,7 +409,7 @@ PHP_METHOD(coroutine,event_loop)
     events = calloc (DEFAULT_MAX_EVENT, sizeof(event));
  
     int test=0;
-    for(;test<100;test++)
+    for(;test<1000;test++)
     {
         nfds = epoll_wait (RG.epollfd, events,DEFAULT_MAX_EVENT,1000);
         for(i=0;i<nfds;i++)
