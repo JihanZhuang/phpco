@@ -147,6 +147,26 @@ int c_convert_to_fd(zval *zfd TSRMLS_DC)
             return C_ERR;
         }
     }
+    else if (C_Z_TYPE_P(zfd) == IS_OBJECT)
+    {
+    /*pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(obj);
+    pdo_dbh_t *dbh = dbh_obj->inner;
+    pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
+    MYSQLND *mysql_nd=(MYSQLND *)H->server;
+    php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&fd, 1);*/
+
+    zend_string *class_name = NULL; 
+    class_name = Z_OBJ_P(zfd)->handlers->get_class_name(Z_OBJ_P(zfd));
+    zend_string *pdo_name=zend_string_init("PDO",strlen("PDO"),0);
+    if(zend_string_equals(class_name,pdo_name)){
+        pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(zfd);
+        pdo_dbh_t *dbh = dbh_obj->inner;
+        pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
+        MYSQLND *mysql_nd=(MYSQLND *)H->server;
+        php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&socket_fd, 1);
+    }
+
+    }
     else
     {
         return C_ERR;

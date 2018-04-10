@@ -19,6 +19,7 @@ var_dump($sock);
 $pdo=new PDO('mysql:host=127.0.0.1;port=3306;dbname=test;charset=UTF8;','root','', array(PDO::ATTR_PERSISTENT=>true));
 var_dump($pdo);
 co::socket_set_timeout($pdo,1,true);
+exit;
 co::create(function()use(&$arr,&$socks){
     $cid=co::get_current_cid();
     $fd=null;

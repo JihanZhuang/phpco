@@ -6,14 +6,15 @@
 typedef struct _aio_event
 {
     int fd;
-    off_t offset;
-    size_t nbytes;
-    void *buf;
-    void *req;
+    //off_t offset;
+    //size_t nbytes;
+    //void *buf;
+    //void *req;
     void *php_context;
     struct epoll_event *ep_event;
     int fd_type;
     void *timer;
+    void *object;
     zval *arguments;
     int args_count;
     char *function_name;
