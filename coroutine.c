@@ -73,9 +73,14 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___construct, 0, 0, 1)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___invoke, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___call, 0, 0, 1)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___invoke, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___destruct, 0, 0, 1)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___call, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___destruct, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 
@@ -340,12 +345,13 @@ PHP_METHOD(coroutine,socket_set_timeout)
     MYSQLND *mysql_nd=(MYSQLND *)H->server;
     php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&fd, 1);*/
     
-    zend_string *class_name = NULL; 
+    /*zend_string *class_name = NULL; 
     class_name = Z_OBJ_P(obj)->handlers->get_class_name(Z_OBJ_P(obj));
     zend_string *pdo_name=zend_string_init("PDO",strlen("PDO"),0);
     if(zend_string_equals(class_name,pdo_name)){
         printf("123");
-    }
+    }*/
+    
     ele->fd=fd;
     ele->timeout=timeout;
     ele->last_time=get_current_time();
@@ -453,25 +459,69 @@ const zend_function_entry coroutine_method[]={
 };
 
 PHP_METHOD(co_pdo,__construct){
+    zval pdo;
+/*    zval *dsn,*user=null,*password=null,*driver_options=null;
+    zval property;
+
+    zend_parse_parameters(zend_num_args() tsrmls_cc, "z|zzz", &dsn,&user,&password,&driver_options);
+    array_init(&property);
+    add_assoc_zval(&property, "dsn", dsn);
+    if(user){
+        add_assoc_zval(&property, "user", user);
+    }
+    if(password){
+        add_assoc_zval(&property, "password", password);
+    }
+    if(driver_options){
+        add_assoc_zval(&property, "driver_options", driver_options);
+    }
+*/
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+   
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0); 
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }  
+    object_init_ex(&pdo, php_pdo_get_dbh_ce());
+    zval con_fun_name;
+    ZVAL_STRING(&con_fun_name, "__construct");
+    zval ret_pdo_obj;
+    call_user_function(NULL, &pdo, &con_fun_name, &ret_pdo_obj, args_count, arguments);
+    efree(arguments);
+    zval_dtor(&con_fun_name);
+    zval_dtor(&ret_pdo_obj);
+    zend_update_property(co_pdo_class_entry_ptr, getThis(), "origin", sizeof("origin")-1, &pdo);
+    
+}
+
+PHP_METHOD(co_pdo,__destruct){
+    zval *origin;
+    zval rv;
+    origin=zend_read_property(co_pdo_class_entry_ptr,getThis(),"origin",sizeof("origin")-1,0,&rv);
+    zval_dtor(origin);
+    
+}
+
+PHP_METHOD(co_pdo,__call){
 
 }
 
-PHP_METHOD(co_pdo,__invoke){
-
-}
-
-PHP_METHOD(co_pdo_statement,__invoke){
+PHP_METHOD(co_pdo_statement,__call){
 
 }
 
 const zend_function_entry co_pdo_method[]={
     PHP_ME(co_pdo,      __construct, arginfo_co_pdo___construct,    ZEND_ACC_PUBLIC)
-    PHP_ME(co_pdo,      __invoke, arginfo_co_pdo___invoke,    ZEND_ACC_PUBLIC)
+    PHP_ME(co_pdo,      __call, arginfo_co_pdo___call,    ZEND_ACC_PUBLIC)
+    PHP_ME(co_pdo,      __destruct, arginfo_co_pdo___destruct,    ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 
 const zend_function_entry co_pdo_statement_method[]={
-    PHP_ME(co_pdo_statement,      __invoke, arginfo_co_pdo_statement___invoke,    ZEND_ACC_PUBLIC)
+    PHP_ME(co_pdo_statement,      __call, arginfo_co_pdo_statement___call,    ZEND_ACC_PUBLIC)
+//    PHP_ME(co_pdo_statement,      __destruct, arginfo_co_pdo_statement___destruct,    ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
 

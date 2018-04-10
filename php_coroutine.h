@@ -8,6 +8,7 @@
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
 #include "zend_types.h"
+#include "zend_hash.h"
 #include "pdo/php_pdo_driver.h"
 //#include "mysqlnd/mysqlnd_structs.h"
 #include "include/php_pdo_mysql_int.h"
