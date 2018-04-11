@@ -477,22 +477,6 @@ const zend_function_entry coroutine_method[]={
 
 PHP_METHOD(co_pdo,__construct){
     zval pdo;
-/*    zval *dsn,*user=null,*password=null,*driver_options=null;
-    zval property;
-
-    zend_parse_parameters(zend_num_args() tsrmls_cc, "z|zzz", &dsn,&user,&password,&driver_options);
-    array_init(&property);
-    add_assoc_zval(&property, "dsn", dsn);
-    if(user){
-        add_assoc_zval(&property, "user", user);
-    }
-    if(password){
-        add_assoc_zval(&property, "password", password);
-    }
-    if(driver_options){
-        add_assoc_zval(&property, "driver_options", driver_options);
-    }
-*/
     zval *arguments;
     int args_count=ZEND_NUM_ARGS();
    
@@ -569,7 +553,6 @@ PHP_METHOD(co_pdo_statement,__destruct){
     zval rv;
     origin=zend_read_property(co_pdo_statement_class_entry_ptr,getThis(),"origin",sizeof("origin")-1,0,&rv);
     zval_dtor(origin);
-    
 }
 
 const zend_function_entry co_pdo_method[]={
