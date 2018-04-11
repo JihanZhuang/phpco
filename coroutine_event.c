@@ -159,16 +159,24 @@ int c_convert_to_fd(zval *zfd TSRMLS_DC)
     zend_string *class_name = NULL; 
     class_name = Z_OBJ_P(zfd)->handlers->get_class_name(Z_OBJ_P(zfd));
     zend_string *pdo_name=zend_string_init("PDO",strlen("PDO"),0);
+    zend_string *pdo_statement_name=zend_string_init("PDOStatement",strlen("PDOStatement"),0);
     if(zend_string_equals(class_name,pdo_name)){
-        zend_string_release(pdo_name);
-        zend_string_release(class_name);
         pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(zfd);
         pdo_dbh_t *dbh = dbh_obj->inner;
         pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
         MYSQLND *mysql_nd=(MYSQLND *)H->server;
         php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&socket_fd, 1);
+    }else if(zend_string_equals(class_name,pdo_statement_name)){
+        pdo_stmt_t *stmt = Z_PDO_STMT_P(zfd);
+        pdo_dbh_t *dbh = stmt->dbh;
+        pdo_mysql_db_handle *H=(pdo_mysql_db_handle *)dbh->driver_data;
+        MYSQLND *mysql_nd=(MYSQLND *)H->server;
+        php_stream_cast(mysql_nd->data->vio->data->stream, PHP_STREAM_AS_FD_FOR_SELECT | PHP_STREAM_CAST_INTERNAL, (void* )&socket_fd, 1);  
     }
 
+        zend_string_release(pdo_name);
+        zend_string_release(pdo_statement_name);
+        zend_string_release(class_name);
     }
     else
     {

@@ -9,10 +9,10 @@ $sql = 'SELECT * from user';
 $d=$a->prepare($sql);
 //);
 $d->origin->execute(array(150, 'red'));
-$ret=$d->origin->fetchAll();
+$ret=$d->fetchAll();
 unset($a);
 unset($d);
-var_dump($ret);
+//var_dump($ret);
 unset($ret);
 var_dump($i);
 }

@@ -8,9 +8,4 @@
 - socket需要超时控制(done)
 
 - 对象操作支持(redis,mysql),待实现
-st_mysqlnd_connection_data dbh->server->data->vio->data->stream
-
-stmt->dbh
-pdo
-pdo_dbh_object_t *dbh_obj = Z_PDO_OBJECT_P(obj);
-pdo_dbh_t *dbh = dbh_obj->inner;  
+- timeout设定,invoke需要把持久化的timeout进行更新、将非持久化的删掉

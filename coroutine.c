@@ -30,6 +30,10 @@ static void aio_invoke(aio_event *event)
             }else{
             }
 
+        }else if(strcmp(event->object_name,"PDOStatement")==0){
+             ZVAL_STRING(&function_name,event->function_name);
+             call_user_function(NULL, event->object, &function_name, &result, event->args_count, event->arguments); 
+             zval_dtor(&function_name);
         }
     }else{
         if(event->function_name){
@@ -88,6 +92,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_resume, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_coroutine_event_loop, 0, 0, 1)
 ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___construct, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_prepare, 0, 0, 1)
@@ -95,7 +100,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___destruct, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___call, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_fetchAll, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___destruct, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -517,14 +522,6 @@ PHP_METHOD(co_pdo,prepare){
     zval *origin;
     zval rv;
     origin=zend_read_property(co_pdo_class_entry_ptr,getThis(),"origin",sizeof("origin")-1,0,&rv);
-    /*zval function_name;
-    zval pdo_statement_obj;
-    ZVAL_STRING(&function_name,"prepare");
-    call_user_function(NULL, origin, &function_name, &pdo_statement_obj, args_count, arguments);
-    zval_dtor(&function_name);
-    efree(arguments);
-    object_init_ex(return_value, co_pdo_statement_class_entry_ptr);
-    zend_update_property(co_pdo_statement_class_entry_ptr, return_value, "origin", sizeof("origin")-1, &pdo_statement_obj);*/
     int fd = c_convert_to_fd(origin TSRMLS_CC);
     if (fd < 0)
     {
@@ -544,7 +541,35 @@ PHP_METHOD(co_pdo,prepare){
 
 }
 
-PHP_METHOD(co_pdo_statement,__call){
+PHP_METHOD(co_pdo_statement,fetchAll){
+    zval *arguments;
+    int args_count=ZEND_NUM_ARGS();
+   
+    arguments = (zval *) safe_emalloc(sizeof(zval), args_count, 0); 
+    if (zend_get_parameters_array(ZEND_NUM_ARGS(), args_count, arguments) == FAILURE) {
+        efree(arguments);
+        RETURN_FALSE;
+    }   
+    zval *origin;
+    zval rv;
+    origin=zend_read_property(co_pdo_statement_class_entry_ptr,getThis(),"origin",sizeof("origin")-1,0,&rv);
+    int fd = c_convert_to_fd(origin TSRMLS_CC);
+    if (fd < 0)
+    {
+        RETURN_FALSE;
+    }
+    
+    php_context *context = emalloc(sizeof(php_context));
+    int ret = aio_event_store_object(fd,FD_TYPE_NORMAL,context,aio_invoke,EPOLLOUT,NULL,origin,"PDOStatement","fetchAll",arguments,args_count);
+    if (ret < 0)
+    {
+        efree(context);
+        RETURN_FALSE;
+    }
+
+    coro_save(context);
+    coro_yield();
+
 
 }
 
@@ -563,7 +588,7 @@ const zend_function_entry co_pdo_method[]={
 };
 
 const zend_function_entry co_pdo_statement_method[]={
-    //PHP_ME(co_pdo_statement,      __call, arginfo_co_pdo_statement___call,    ZEND_ACC_PUBLIC)
+    PHP_ME(co_pdo_statement,      fetchAll, arginfo_co_pdo_statement_fetchAll,    ZEND_ACC_PUBLIC)
     PHP_ME(co_pdo_statement,      __destruct, arginfo_co_pdo_statement___destruct,    ZEND_ACC_PUBLIC)
     PHP_FE_END
 };
