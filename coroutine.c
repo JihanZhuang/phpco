@@ -97,10 +97,68 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___construct, 0, 0, 1)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_prepare, 0, 0, 1)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_query, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_quote, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_rollBack, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_beginTransaction, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_exec, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_errorCode, 0, 0, 1)//no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_errorInfo, 0, 0, 1)//no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_getAttribute, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_inTransaction, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_lastInsertId, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_setAttribute, 0, 0, 1)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo___destruct, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_fetchAll, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_closeCursor, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_columnCount, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_execute, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_fetch, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_fetchColumn, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_fetchObject , 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_getColumnMeta, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_nextRowset, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_rowCount, 0, 0, 1)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_bindColumn, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_bindParam, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_bindValue, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_debugDumpParams, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_errorCode, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_errorInfo, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_getAttribute, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_setAttribute, 0, 0, 1) //no
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement_setFetchMode, 0, 0, 1) //no
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_co_pdo_statement___destruct, 0, 0, 1)
 ZEND_END_ARG_INFO()
@@ -461,9 +519,9 @@ PHP_METHOD(coroutine,event_loop)
 
 
 const zend_function_entry coroutine_function[]={
-	PHP_FE(coroutine_create, arginfo_coroutine_create)
+    PHP_FE(coroutine_create, arginfo_coroutine_create)
     PHP_FALIAS(co, coroutine_create, arginfo_coroutine_create)
-	PHP_FE_END
+    PHP_FE_END
 };
 const zend_function_entry coroutine_method[]={
     ZEND_FENTRY(create, ZEND_FN(coroutine_create), arginfo_coroutine_create, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
@@ -596,18 +654,18 @@ const zend_function_entry co_pdo_statement_method[]={
 
 PHP_MINIT_FUNCTION(coroutine)
 {
-	INIT_CLASS_ENTRY(coroutine_util_ce,"coroutine",coroutine_method);
-	coroutine_util_class_entry_ptr = zend_register_internal_class(&coroutine_util_ce);
-	zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
+    INIT_CLASS_ENTRY(coroutine_util_ce,"coroutine",coroutine_method);
+    coroutine_util_class_entry_ptr = zend_register_internal_class(&coroutine_util_ce);
+    zend_register_class_alias("Co", coroutine_util_class_entry_ptr);
     INIT_CLASS_ENTRY(co_pdo_ce,"Co\\PDO",co_pdo_method);
-	co_pdo_class_entry_ptr = zend_register_internal_class(&co_pdo_ce);
+    co_pdo_class_entry_ptr = zend_register_internal_class(&co_pdo_ce);
     zend_declare_property_null(co_pdo_class_entry_ptr, "origin", strlen("origin"), ZEND_ACC_PUBLIC);
     INIT_CLASS_ENTRY(co_pdo_statement_ce,"Co\\PDOStatement",co_pdo_statement_method);
-	co_pdo_statement_class_entry_ptr = zend_register_internal_class(&co_pdo_statement_ce);
+    co_pdo_statement_class_entry_ptr = zend_register_internal_class(&co_pdo_statement_ce);
     zend_declare_property_null(co_pdo_statement_class_entry_ptr, "origin", strlen("origin"), ZEND_ACC_PUBLIC);
 
     RG.timeout_fd_link=initqueue();
-	return SUCCESS;
+    return SUCCESS;
 }
 PHP_RSHUTDOWN_FUNCTION(coroutine)
 {
@@ -644,3 +702,4 @@ zend_module_entry coroutine_module_entry = {
 #ifdef COMPILE_DL_COROUTINE
 ZEND_GET_MODULE(coroutine)
 #endif
+
